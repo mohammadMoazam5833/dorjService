@@ -1,7 +1,7 @@
+import { useState } from 'react'
 import Card, { Hint } from '../../components/Card.jsx'
 import Button from '../../components/Button.jsx'
-import { useApi } from '../../lib/api.js'
-import { apiPost } from '../../lib/api.js'
+import { useApi, apiPost } from '../../lib/api.js'
 
 export default function ModelsAdmin() {
   const { data } = useApi('/admin-panel/api/admin/models', [])
