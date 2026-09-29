@@ -63,7 +63,7 @@ function NavGroup({ group, items, active, mini }) {
             return (
               <a key={it.label} href={`#/${it.route}`} title={it.label}>
                 <div className={`menu-item mini ${sel ? 'iron-selected' : ''}`}>
-                  <Icon name={it.icon} size={20} color={sel ? 'var(--nav-active)' : 'currentColor'} />
+                  <Icon name={it.icon} size={17} color={sel ? 'var(--nav-active)' : 'currentColor'} />
                 </div>
               </a>
             )
@@ -77,7 +77,11 @@ function NavGroup({ group, items, active, mini }) {
     <div className="nav-group">
       <button className="nav-group-label" onClick={() => setOpen(o => !o)}>
         <span>{group}</span>
-        <span className="nav-arrow">{open ? '▲' : '▼'}</span>
+        <span className={`nav-arrow ${open ? '' : 'closed'}`}>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+            <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+          </svg>
+        </span>
       </button>
       <div ref={ref} className="nav-group-items" style={{ overflow: 'hidden' }}>
         {items.map(it => {
@@ -85,7 +89,7 @@ function NavGroup({ group, items, active, mini }) {
           return (
             <a key={it.label} href={`#/${it.route}`}>
               <div className={`menu-item ${sel ? 'iron-selected' : ''}`}>
-                <Icon name={it.icon} size={19} color={sel ? 'var(--nav-active)' : 'currentColor'} />
+                <Icon name={it.icon} size={17} color={sel ? 'var(--nav-active)' : 'currentColor'} />
                 <span>{it.label}</span>
               </div>
             </a>
@@ -104,8 +108,8 @@ export default function Drawer({ active }) {
 
       <figure className="logo">
         {mini
-          ? <Logo variant="light" height={34} showWord={false} />
-          : <Logo variant="light" height={40} />}
+          ? <Logo variant="light" height={30} showWord={false} />
+          : <Logo variant="light" height={34} />}
       </figure>
 
       <nav className="drawer-nav">
@@ -121,20 +125,20 @@ export default function Drawer({ active }) {
           return mini ? (
             <a key={it.label} href={`#/${it.route}`} title={it.label}>
               <div className={`menu-item mini ${sel ? 'iron-selected' : ''}`}>
-                <Icon name={it.icon} size={18} color={sel ? 'var(--nav-active)' : 'currentColor'} />
+                <Icon name={it.icon} size={16} color={sel ? 'var(--nav-active)' : 'currentColor'} />
               </div>
             </a>
           ) : (
             <a key={it.label} href={`#/${it.route}`}>
               <div className={`menu-item ${sel ? 'iron-selected' : ''}`}>
-                <Icon name={it.icon} size={18} color={sel ? 'var(--nav-active)' : 'currentColor'} />
+                <Icon name={it.icon} size={16} color={sel ? 'var(--nav-active)' : 'currentColor'} />
                 <span>{it.label}</span>
               </div>
             </a>
           )
         })}
         <button className="drawer-toggle" onClick={() => setMini(m => !m)} title={mini ? 'بازکردن منو' : 'بستن منو'}>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             {mini
               ? <path d="M8 5v14l11-7z" />
               : <path d="M16 5v14L5 12z" />}
