@@ -19,11 +19,11 @@ function SaveBar({ onSave, extra }) {
 }
 
 export function NotebookOptions() {
-  const { data } = useApi('/admin-panel/api/admin/notebook-options', {})
+  const { data } = useApi('/admin-panel/api/admin/notebook-options', [])
   const [images, setImages] = useState(null)
   const [gpus, setGpus] = useState(null)
-  const imgs = images !== null ? images : (data.images || [])
-  const gpuOpts = gpus !== null ? gpus : (data.gpu_options || [])
+  const imgs = images !== null ? images : (data?.images || [])
+  const gpuOpts = gpus !== null ? gpus : (data?.gpu_options || [])
   return (
     <>
       <Card title="گزینه‌های Image نوت‌بوک">
@@ -54,13 +54,13 @@ export function NotebookOptions() {
 }
 
 export function Branding() {
-  const { data } = useApi('/api/branding', {})
+  const { data } = useApi('/api/branding', [])
   const [name, setName] = useState(null)
   const [color, setColor] = useState(null)
   return (
     <Card title="ظاهر و برند پلتفرم">
-      <div className="ap-form-row"><label>نام پلتفرم</label><input className="ap-search" value={name !== null ? name : (data.platform_name || 'دُرج')} onChange={e => setName(e.target.value)} /></div>
-      <div className="ap-form-row"><label>رنگ اصلی</label><input type="color" value={color !== null ? color : (data.primary_color || '#0d9488')} onChange={e => setColor(e.target.value)} style={{ width: 60, height: 36, padding: 2, border: '1px solid var(--line)', borderRadius: 8, background: '#fff' }} /></div>
+      <div className="ap-form-row"><label>نام پلتفرم</label><input className="ap-search" value={name !== null ? name : (data?.platform_name || 'دُرج')} onChange={e => setName(e.target.value)} /></div>
+      <div className="ap-form-row"><label>رنگ اصلی</label><input type="color" value={color !== null ? color : (data?.primary_color || '#0d9488')} onChange={e => setColor(e.target.value)} style={{ width: 60, height: 36, padding: 2, border: '1px solid var(--line)', borderRadius: 8, background: '#fff' }} /></div>
       <div className="ap-form-row"><label>Favicon (دقیقاً ۶۴×۶۴ پیکسل، حداکثر حجم ورودی ۲ مگابایت)</label><input type="file" style={{ fontSize: 13 }} /><Button variant="ghost">حذف</Button></div>
       <div className="ap-form-row"><label>لوگوی نوار کناری (حداکثر ۴۸۰×۱۶۰ پیکسل، حداکثر حجم ورودی ۲ مگابایت)</label><input type="file" style={{ fontSize: 13 }} /></div>
       <SaveBar extra={<Button variant="ghost">بازگشت به حالت کارخانه</Button>} />
