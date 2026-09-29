@@ -22,8 +22,7 @@ const NAV = [
 ]
 
 const BOTTOM = [
-  { label: 'ایمیل',  icon: 'mail', route: 'mail' },
-  { label: 'راهنما', icon: 'info', route: 'help' },
+  { label: 'ایمیل', icon: 'mail', route: 'mail' },
 ]
 
 function NavGroup({ group, items, active, mini }) {
