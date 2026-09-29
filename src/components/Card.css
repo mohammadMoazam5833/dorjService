@@ -1,0 +1,3 @@
+.ap-card { background: #fff; border: 1px solid var(--card-border); border-radius: 10px; box-shadow: var(--card-shadow); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.ap-card h2 { font-size: 16px; font-weight: 700; }
+.hint { font-size: 13px; color: var(--muted); line-height: 20px; }

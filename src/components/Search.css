@@ -1,0 +1,1 @@
+.ap-search { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; height: 38px; padding: 0 12px; font-size: 13px; color: var(--input-text); font-family: inherit; width: 100%; outline: none; }

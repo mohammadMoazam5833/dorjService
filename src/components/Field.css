@@ -1,0 +1,8 @@
+.input, .select { display: flex; align-items: center; gap: 8px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 0 12px; height: 38px; font-size: 13px; color: var(--input-text); width: 100%; font-family: inherit; }
+.input.on-white { background: #fff; border-color: var(--ctl-line); }
+.input .ph { color: #80868b; }
+.select::after { content: '▾'; color: #555; margin-inline-start: auto; font-size: 11px; }
+.field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.field > label { font-size: 12.5px; color: var(--muted); }
+.fields-row { display: flex; gap: 16px; }
+.actions { display: flex; gap: 10px; }

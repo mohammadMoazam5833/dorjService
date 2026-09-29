@@ -1,0 +1,2 @@
+.checkbox { width: 16px; height: 16px; border-radius: 3px; border: 1.2px solid #767676; display: inline-flex; align-items: center; justify-content: center; background: #fff; }
+.checkbox.on { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 11px; }

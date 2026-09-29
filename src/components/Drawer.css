@@ -1,0 +1,8 @@
+.drawer { width: var(--side-w); background: var(--side); display: flex; flex-direction: column; flex-shrink: 0; padding-top: 16px; }
+.drawer .logo { width: 160px; height: 120px; margin: 0 auto 16px; padding: 0 8px; display: flex; align-items: center; justify-content: center; }
+.drawer .logo img { width: 144px; height: 120px; object-fit: contain; }
+.drawer .scrollable { flex: 1; }
+.drawer a { text-decoration: none; display: block; }
+.menu-item { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; color: var(--nav-inactive); font-size: 15px; font-weight: 700; line-height: 24px; }
+.menu-item svg { flex-shrink: 0; }
+.menu-item.iron-selected { color: var(--nav-active); }

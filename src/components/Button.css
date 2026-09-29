@@ -1,0 +1,4 @@
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; cursor: pointer; white-space: nowrap; border: 0; }
+.btn-primary { background: var(--teal); color: #fff; font-size: 12px; font-weight: 600; border-radius: 20px; height: 34px; padding: 0 16px; }
+.btn-ghost { background: #fff; color: var(--input-text); font-size: 13px; font-weight: 600; border-radius: 6px; height: 40px; padding: 0 16px; border: 1px solid var(--card-border); }
+.btn-danger { background: var(--red-bg); color: var(--red); font-size: 13px; font-weight: 600; border-radius: 6px; height: 40px; padding: 0 16px; border: 1px solid transparent; }

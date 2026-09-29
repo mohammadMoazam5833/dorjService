@@ -1,0 +1,48 @@
+@font-face { font-family: 'Vazirmatn'; src: url('/fonts/vazirmatn-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: 'Vazirmatn'; src: url('/fonts/vazirmatn-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
+@font-face { font-family: 'Vazirmatn'; src: url('/fonts/vazirmatn-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+
+:root {
+  --side: #0a3b71;
+  --nav-inactive: rgba(255, 255, 255, 0.5);
+  --nav-active: #12dec6;
+  --header-h: 64px;
+  --side-w: 240px;
+  --main-bg: #f1f3f4;
+  --shadow-md: 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12), 0 3px 1px -2px rgba(0,0,0,.2);
+  --shadow-header: rgba(232,234,237,.5) 0 2px 6px 1px, rgba(60,64,67,.15) 0 1px 3px 1px;
+  --tab-h: 45px;
+  --tab-text: #616161;
+  --tab-active: #007dfc;
+  --tab-line: #dfe2e6;
+  --card-border: #dbe3e8;
+  --card-shadow: rgba(10,40,60,.08) 0 2px 10px 0;
+  --input-bg: #f4f7f9;
+  --input-text: #1c2b36;
+  --muted: #5b6b76;
+  --line: #dbe3e8;
+  --teal: #0d9488;
+  --ctl-line: #e0e0e0;
+  --pager-text: #5f6368;
+  --accent: #2563eb;
+  --icon-bg: #dbeafe;
+  --green-bg: #e7f6ee; --green: #1e8e5a;
+  --gray-bg: #eceff1; --gray: #5f6368;
+  --red-bg: #fdecea; --red: #d93025;
+  --float-line: #dde2e6;
+  --float-shadow: rgba(0,0,0,.12) 0 1px 4px 0;
+  --float-shadow-lg: rgba(7,42,82,.16) 0 12px 32px 0, rgba(7,42,82,.08) 0 2px 8px 0;
+  --ink: #060d1c; --ink-2: #0b1730; --ink-3: #12224a;
+  --line-dark: rgba(148, 179, 229, 0.16);
+  --text: #0c1a33; --muted-2: #56657f;
+  --on-dark: #e8f0ff;
+  --brand-cyan: #22d3ee; --brand-blue: #2563eb;
+  --brand-grad: linear-gradient(120deg, #22d3ee 0%, #3b82f6 55%, #4f46e5 100%);
+  --r-sm: 8px; --r-lg: 22px;
+  --font: 'Vazirmatn', 'Roboto', sans-serif;
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+body { font-family: var(--font); background: var(--main-bg); color: #000; overflow-x: hidden; }
