@@ -3,13 +3,13 @@
 .dash-grid {
   max-width: 1227px; margin: 0 auto;
   display: grid; gap: 12px;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: 350px 67px 67px 245px;
   grid-template-areas:
-    "quicklinks notebooks docs"
-    "tiles tiles cost"
-    "tiles tiles cost"
-    "usage usage cost";
+    "quicklinks notebooks"
+    "tiles cost"
+    "tiles cost"
+    "usage cost";
 }
 .dash-tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-auto-rows: 67px; gap: 12px; }
 .dash-tiles .tile { width: auto; min-height: 0; }

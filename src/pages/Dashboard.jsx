@@ -25,14 +25,6 @@ export default function Dashboard() {
     <AppShell active="خانه">
       <div className="dash-view">
         <div className="dash-grid">
-          <div className="dash-col" style={{ gridArea: 'docs' }}>
-            <div className="doc-card">
-              <Icon name="docs" size={56} color="#2563eb" />
-              <div className="doc-title">مستندات</div>
-              <div className="doc-desc">راهنماها، مستندات فنی و نحوه‌ی استفاده از آن را می‌توانید در این بخش مشاهده کنید.</div>
-              <a className="doc-button" href="#/help">مشاهده مستندات</a>
-            </div>
-          </div>
           <div className="dash-col" style={{ gridArea: 'notebooks' }}>
             <div className="panel-card">
               <div className="panel-header"><span className="title-text">نوت‌بوک‌های اخیر</span></div>
