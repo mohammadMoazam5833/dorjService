@@ -104,8 +104,7 @@ export default function Mail() {
                     {f.total > 0 && (
                       <span className={`ml-fcount ${f.unseen ? 'has-unseen' : ''}`}>{f.total}</span>
                     )}
-                  </button>
-                )
+                  </button>                )
               })}
             </nav>
             <div className="ml-side-note">
