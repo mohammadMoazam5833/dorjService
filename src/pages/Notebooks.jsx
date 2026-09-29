@@ -117,7 +117,7 @@ function DeleteModal({ notebook, onConfirm, onCancel }) {
         </p>
         {inUse && (
           <div style={{ background: '#fff8e7', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#b8790a', marginBottom: 12 }}>
-            این نوت‌بوک در حال استفاده از والیوم «{inUse}» است. ابتدا نوت‌بوک را متوقف کنید.
+            این نوت‌بوک در حال استفاده از فضای ذخیره‌سازی «{inUse}» است. ابتدا نوت‌بوک را متوقف کنید.
           </div>
         )}
         <div className="nb-del-confirm-label">برای تأیید، نام نوت‌بوک را بنویسید:</div>
@@ -236,7 +236,7 @@ function CreateModal({ opts, quota, onClose, onCreate }) {
             </button>
             {adv && (
               <div className="nb-adv-content">
-                <label className="nb-flabel">حالت دسترسی والیوم</label>
+                <label className="nb-flabel">حالت دسترسی فضای ذخیره‌سازی</label>
                 <select className="nb-finput" value={mode} onChange={e => setMode(e.target.value)}>
                   <option value="ReadWriteOnce">ReadWriteOnce — اختصاصی</option>
                   <option value="ReadOnlyMany">ReadOnlyMany — فقط‌خواندنی</option>
@@ -451,7 +451,7 @@ export default function Notebooks() {
                               <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
                             </button>
                             {inUse && (
-                              <div className="nb-tooltip">در حال استفاده توسط والیوم «{inUse}»</div>
+                              <div className="nb-tooltip">در حال استفاده توسط فضای ذخیره‌سازی «{inUse}»</div>
                             )}
                           </div>
                         </div>

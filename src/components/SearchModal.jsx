@@ -31,7 +31,7 @@ export default function SearchModal({ onClose }) {
     label: n.name, sub: `نوت‌بوک · ${n.status}`, icon: '📒', route: 'notebooks',
   }))
   const volItems = (Array.isArray(volumes) ? volumes : []).map(v => ({
-    label: v.name, sub: `والیوم · ${v.size}`, icon: '💾', route: 'volumes',
+    label: v.name, sub: `فضای ذخیره‌سازی · ${v.size}`, icon: '💾', route: 'volumes',
   }))
 
   const ALL = [...PAGES, ...nbItems, ...volItems]
@@ -73,7 +73,7 @@ export default function SearchModal({ onClose }) {
           <input
             ref={inputRef}
             className="sm-input"
-            placeholder="جستجو در صفحات، نوت‌بوک‌ها، والیوم‌ها…"
+            placeholder="جستجو در صفحات، نوت‌بوک‌ها، فضاهای ذخیره‌سازی…"
             value={q}
             onChange={e => setQ(e.target.value)}
             onKeyDown={onKey}

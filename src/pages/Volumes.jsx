@@ -63,7 +63,7 @@ function RowMenu({ volume, onBrowse, onDelete }) {
           <div
             className={`vl-menu-item ${!volume.viewer_url ? 'disabled' : ''}`}
             onClick={() => volume.viewer_url && act(onBrowse)}
-            title={!volume.viewer_url ? 'فایل‌ها در دسترس نیستند — والیوم mount نشده' : undefined}
+            title={!volume.viewer_url ? 'فایل‌ها در دسترس نیستند — فضای ذخیره‌سازی mount نشده' : undefined}
           >
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
             مرور فایل‌ها
@@ -196,11 +196,11 @@ export default function Volumes() {
 
   const browse = v => {
     if (v.viewer_url && v.viewer_url !== '#') window.open(v.viewer_url, '_blank')
-    else setToast({ msg: `مرور فایل‌ها برای «${v.name}» در دسترس نیست — والیوم mount نشده است.` })
+    else setToast({ msg: `مرور فایل‌ها برای «${v.name}» در دسترس نیست — فضای ذخیره‌سازی mount نشده است.` })
   }
 
   const handleDelete = v => {
-    setToast({ msg: `والیوم «${v.name}» حذف شد.` })
+    setToast({ msg: `فضای ذخیره‌سازی «${v.name}» حذف شد.` })
   }
 
   const create = async () => {
@@ -208,7 +208,7 @@ export default function Volumes() {
     await apiPost('/api/volumes', { name, size_gib: Number(size) })
     setSaving(false)
     setOpen(false)
-    setToast({ msg: `والیوم «${name}» ایجاد شد.` })
+    setToast({ msg: `فضای ذخیره‌سازی «${name}» ایجاد شد.` })
     setTimeout(() => window.location.reload(), 200)
   }
 
@@ -231,7 +231,7 @@ export default function Volumes() {
           <div className="spacer" />
           <button className="vl-new-btn" onClick={() => setOpen(true)}>
             <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
-            ایجاد والیوم
+            ایجاد فضای ذخیره‌سازی
           </button>
         </div>
 
@@ -243,7 +243,7 @@ export default function Volumes() {
             </svg>
             <input
               className="vl-search-input"
-              placeholder="جستجوی والیوم…"
+              placeholder="جستجوی فضای ذخیره‌سازی…"
               value={query}
               onChange={e => { setQuery(e.target.value); setPage(0) }}
             />
@@ -262,7 +262,7 @@ export default function Volumes() {
           </div>
 
           <div className="vl-spacer" />
-          <span className="vl-count">{list.length} والیوم</span>
+          <span className="vl-count">{list.length} فضا</span>
           <ColPicker visible={visible} onChange={setVisible} />
         </div>
 
@@ -284,8 +284,8 @@ export default function Volumes() {
           <div className="vl-empty">
             <div className="vl-empty-icon">💾</div>
             <h3>هنوز فضای ذخیره‌سازی ندارید</h3>
-            <p>والیوم‌ها برای ذخیره دائمی داده‌های نوت‌بوک‌ها استفاده می‌شوند.</p>
-            <button className="vl-new-btn" onClick={() => setOpen(true)}>ایجاد اولین والیوم</button>
+            <p>فضاهای ذخیره‌سازی برای ذخیره دائمی داده‌های نوت‌بوک‌ها استفاده می‌شوند.</p>
+            <button className="vl-new-btn" onClick={() => setOpen(true)}>ایجاد اولین فضا</button>
           </div>
         )}
 
