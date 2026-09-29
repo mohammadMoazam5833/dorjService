@@ -47,7 +47,7 @@ export default function Mail() {
           </div>
           <div className="mv-main">
             <div className="mv-toolbar">
-              <input className="mv-search" type="search" placeholder="Search..." value={query} onChange={e => { setQuery(e.target.value); setPage(0) }} />
+              <input className="mv-search" type="search" placeholder="جستجوی پیام…" value={query} onChange={e => { setQuery(e.target.value); setPage(0) }} />
               <div className="mv-pagination">
                 <button className="mv-page-btn" onClick={() => setPage(p => Math.max(0, p - 1))}>‹</button>
                 <span className="mv-page-label">{page + 1} / {pages}</span>

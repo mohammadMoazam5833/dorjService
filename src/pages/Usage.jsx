@@ -1,44 +1,147 @@
+import { useState } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import { useApi } from '../lib/api.js'
-import { faNum } from '../lib/format.js'
 import Section from '../components/Section.jsx'
 import Card, { Hint } from '../components/Card.jsx'
 import Table, { Cell } from '../components/Table.jsx'
 import Chart from '../components/Chart.jsx'
 import { Chip, ChipRow } from '../components/Chip.jsx'
 
+// time range definitions: label, point count from end of 36-point history
+const RANGES = [
+  { label: '۶ ساعت اخیر', pts: 6,  xStep: 1,  xUnit: 'h', xCount: 6  },
+  { label: '۲۴ ساعت',     pts: 24, xStep: 4,  xUnit: 'h', xCount: 24 },
+  { label: '۷ روز',       pts: 36, xStep: 6,  xUnit: 'd', xCount: 7  },
+  { label: '۳۰ روز',      pts: 36, xStep: 6,  xUnit: 'd', xCount: 30 },
+]
+
+function makeXLabels(pts, rangeIdx) {
+  const r = RANGES[rangeIdx]
+  return Array.from({ length: pts }, (_, i) => {
+    if (r.xUnit === 'h') return `${pts - i}h`
+    const day = Math.round(((pts - 1 - i) / (pts - 1)) * r.xCount)
+    return day === 0 ? 'امروز' : `${day}d`
+  })
+}
+
+function StatCard({ label, val, sub, pct, unit }) {
+  const color = pct > 80 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#0d9488'
+  return (
+    <div className="stat">
+      <div className="lbl">{label}</div>
+      <div className="val" style={{ fontSize: 18 }}>{val}</div>
+      {sub && <div className="sub">{sub}</div>}
+      {pct != null && (
+        <div style={{ marginTop: 6 }}>
+          <div className="progress-track" style={{ height: 5 }}>
+            <div className="progress-fill" style={{ width: `${Math.min(100, pct)}%`, background: color }} />
+          </div>
+          <div style={{ fontSize: 11, color: '#8fa3b8', marginTop: 3 }}>{pct.toFixed(1)}٪ مصرف‌شده</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Usage() {
   const { data: u } = useApi('/api/resource-usage')
   const { data: hist } = useApi('/api/dashboard-usage-history')
+  const [rangeIdx, setRangeIdx] = useState(0)
+
+  const r = RANGES[rangeIdx]
+  const slice = arr => (Array.isArray(arr) && arr.length > 0)
+    ? arr.slice(Math.max(0, arr.length - r.pts))
+    : []
+
+  const cpuData  = slice(hist?.cpu_cores)
+  const memData  = slice(hist?.memory_gib)
+  const diskData = slice(hist?.storage_gib)
+  const xLabels  = makeXLabels(Math.max(cpuData.length, 1), rangeIdx)
+
+  const cpuPct  = u ? (u.cpu.used_cores / u.cpu.requested_cores) * 100 : 0
+  const memPct  = u ? (u.memory.used_gib / u.memory.requested_gib) * 100 : 0
+  const diskPct = u ? (u.storage.used_gib / u.storage.capacity_gib) * 100 : 0
+
   return (
-    <AppShell active="خانه">
+    <AppShell active="مصرف">
       <div className="title-row">
         <h2>مصرف منابع</h2>
         <div className="spacer" />
         <ChipRow>
-          <Chip on>۶ ساعت اخیر</Chip><Chip>۲۴ ساعت</Chip><Chip>۷ روز</Chip><Chip>۳۰ روز</Chip>
+          {RANGES.map((rng, i) => (
+            <Chip key={i} on={rangeIdx === i} onClick={() => setRangeIdx(i)} style={{ cursor: 'pointer' }}>
+              {rng.label}
+            </Chip>
+          ))}
         </ChipRow>
       </div>
+
       <div className="page-body">
+        {/* stat cards */}
         <div className="stats-row">
-          <div className="stat"><div className="lbl">CPU</div><div className="val">{faNum(u?.cpu?.used_cores ?? 0)} / {faNum(u?.cpu?.requested_cores ?? 8)} هسته</div><div className="sub">درخواست‌شده: {faNum(u?.cpu?.requested_cores ?? 8)}</div></div>
-          <div className="stat"><div className="lbl">حافظه</div><div className="val">{faNum(u?.memory?.used_gib ?? 0)} / {faNum(u?.memory?.requested_gib ?? 32)} GiB</div><div className="sub">درخواست‌شده: {faNum(u?.memory?.requested_gib ?? 32)}</div></div>
-          <div className="stat"><div className="lbl">فضا</div><div className="val">{faNum(u?.storage?.used_gib ?? 0)} / {faNum(u?.storage?.capacity_gib ?? 10)} GiB</div><div className="sub">{faNum((u?.storage?.capacity_gib ?? 10) - (u?.storage?.used_gib ?? 0))}Gi آزاد</div></div>
-          <div className="stat"><div className="lbl">GPU</div><div className="val">{faNum(u?.gpu?.slices_allocated ?? 0)} اسلایس</div><div className="sub">{u?.gpu?.util_pct != null ? faNum(u.gpu.util_pct.toFixed(1)) + '٪' : '—'}</div></div>
+          <StatCard
+            label="CPU"
+            val={`${u?.cpu?.used_cores ?? '—'} / ${u?.cpu?.requested_cores ?? '—'} هسته`}
+            sub={`درخواست‌شده: ${u?.cpu?.requested_cores ?? '—'} هسته`}
+            pct={cpuPct}
+          />
+          <StatCard
+            label="حافظه"
+            val={`${u?.memory?.used_gib ?? '—'} / ${u?.memory?.requested_gib ?? '—'} GiB`}
+            sub={`آزاد: ${u ? (u.memory.requested_gib - u.memory.used_gib).toFixed(1) : '—'} GiB`}
+            pct={memPct}
+          />
+          <StatCard
+            label="ذخیره‌سازی"
+            val={`${u?.storage?.used_gib ?? '—'} / ${u?.storage?.capacity_gib ?? '—'} GiB`}
+            sub={`آزاد: ${u ? (u.storage.capacity_gib - u.storage.used_gib).toFixed(1) : '—'} GiB`}
+            pct={diskPct}
+          />
+          <StatCard
+            label="GPU"
+            val={`${u?.gpu?.slices_allocated ?? '—'} اسلایس`}
+            sub={u?.gpu?.util_pct != null ? `بهره‌وری: ${u.gpu.util_pct.toFixed(1)}٪` : 'بدون داده'}
+            pct={u?.gpu?.util_pct ?? null}
+          />
         </div>
-        <Section title="تاریخچه مصرف">
-          <Chart series={[
-            { color: '#007dfc', data: hist?.cpu_cores || [] },
-            { color: '#12dec6', data: hist?.memory_gib || [] },
-          ]} />
+
+        {/* CPU + Memory chart */}
+        <Section title="CPU و حافظه">
+          <Chart
+            series={[
+              { color: '#2563eb', data: cpuData },
+              { color: '#a855f7', data: memData },
+            ]}
+            unit="GiB / هسته"
+            xLabels={xLabels}
+            height={160}
+            legend={[
+              { color: '#2563eb', label: 'CPU (هسته)' },
+              { color: '#a855f7', label: 'حافظه (GiB)' },
+            ]}
+          />
         </Section>
+
+        {/* Disk chart */}
+        <Section title="ذخیره‌سازی">
+          <Chart
+            series={[{ color: '#0d9488', data: diskData }]}
+            unit="GiB"
+            xLabels={xLabels}
+            height={120}
+            legend={[{ color: '#0d9488', label: 'فضای ذخیره‌سازی (GiB)' }]}
+          />
+        </Section>
+
+        {/* cost table */}
         <Card title="هزینه تخمینی (۳۰ روز)">
           <Table
-            cols={[Cell('منبع', 'r'), Cell('مصرف'), Cell('نرخ'), Cell('هزینه ماهانه')]}
+            cols={[Cell('منبع', 'r'), Cell('مصرف'), Cell('هزینه')]}
             rows={[
-              ['Podها', `${faNum(u?.cpu?.used_cores ?? 0)} ساعت`, '—', (u?.cost?.usd ?? 0) === 0 ? '$0.00' : '$' + u.cost.usd],
-              ['Backup', faNum(u?.backup_cost?.count ?? 0), '—', u?.backup_cost?.usd ? '$' + u.backup_cost.usd : '$0.00'],
-            ]} />
+              ['Podها', `${u?.cpu?.used_cores ?? '—'} هسته فعال`, u?.cost?.irr ? `${Number(u.cost.irr).toLocaleString('en-US')} ریال` : '—'],
+              ['بکاپ', `${u?.backup_cost?.count ?? '—'} بکاپ`, u?.backup_cost?.usd ? `$${u.backup_cost.usd}` : '—'],
+            ]}
+          />
         </Card>
       </div>
     </AppShell>

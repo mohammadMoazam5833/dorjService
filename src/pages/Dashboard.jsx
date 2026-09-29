@@ -3,7 +3,7 @@ import Tile from '../components/Tile.jsx'
 import Icon from '../components/Icon.jsx'
 import Chart from '../components/Chart.jsx'
 import { useApi } from '../lib/api.js'
-import { faNum } from '../lib/format.js'
+import { faNum, rial } from '../lib/format.js'
 
 const QUICK_LINKS = [
   { icon: 'add', title: 'ایجاد نوت‌بوک جدید', desc: 'نوت‌بوک‌های درج', href: '#/notebooks?new=1' },
@@ -60,7 +60,7 @@ export default function Dashboard() {
             <Tile icon="view-module" color="teal" label="مصرف حافظه شما" value={sum ? pct(c.memory_pct) : '۰.۰'} suffix="%" />
             <Tile icon="assessment" color="amber" label="مصرف CPU شما" value={sum ? pct(c.cpu_pct) : '۰.۰'} suffix="%" />
             <Tile icon="supervisor" color="blue" label="تعداد پروفایل‌ها" value={sum ? faNum(sum.profile_count) : '۱'} />
-            <Tile icon="wallet" color="blue" label="هزینه ماهانه" value={sum ? `${faNum((sum.monthly_cost?.amount_irr ?? 0).toLocaleString('en-US'))} ریال` : '۰ ریال'} />
+            <Tile icon="wallet" color="blue" label="هزینه ماهانه" value={sum ? rial(sum.monthly_cost?.amount_irr ?? 0) : rial(0)} />
             <Tile icon="save" color="purple" label="مصرف فضای ذخیره‌سازی شما" value={sum ? pct(c.storage_pct) : '۰.۰'} suffix="%" />
           </div>
           <div className="paper-card section" style={{ gridArea: 'usage' }}>
@@ -70,7 +70,11 @@ export default function Dashboard() {
               {USAGE_COLS.map(col => (
                 <div key={col.key} className="chart-col">
                   <div className="chart-label">{col.label}</div>
-                  <Chart series={[{ color: '#007dfc', data: usage?.[col.key] || [] }]} height={130} />
+                  <Chart
+                    series={[{ color: '#007dfc', data: (usage?.[col.key] || []).slice(-6) }]}
+                    height={130}
+                    unit={col.key === 'cpu_cores' ? 'هسته' : 'GiB'}
+                  />
                 </div>
               ))}
             </div>

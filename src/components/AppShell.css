@@ -1,6 +1,24 @@
 .app-layout { display: flex; min-height: 100vh; background: var(--main-bg); }
 .app-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.app-header { height: var(--header-h); background: #fff; box-shadow: var(--shadow-header); display: flex; align-items: center; padding: 0 16px; position: sticky; top: 0; z-index: 5; }
+.app-header { height: var(--header-h); background: #fff; box-shadow: var(--shadow-header); display: flex; align-items: center; padding: 0 20px; gap: 10px; position: sticky; top: 0; z-index: 5; }
+.app-header-spacer { flex: 1; }
+
+/* search button */
+.app-search-btn {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: #f8fafc;
+  border-radius: 10px; padding: 0 12px; height: 40px;
+  cursor: pointer; font-family: inherit; color: #8fa3b8;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 180px;
+}
+.app-search-btn:hover { background: #eef3f8; border-color: #b8cfe0; color: #56657f; }
+.app-search-placeholder { flex: 1; text-align: start; font-size: 13px; }
+.app-search-kbd {
+  font-family: inherit; font-size: 10.5px; color: #b0b9c4;
+  background: #f0f2f5; border: 1px solid var(--line);
+  border-radius: 5px; padding: 1px 6px; white-space: nowrap;
+}
 .page-title { height: 74px; display: flex; align-items: center; padding: 0 24px; background: #fff; font-size: 17px; font-weight: 700; border-bottom: 1px solid var(--tab-line); }
 .main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .title-row { display: flex; align-items: center; gap: 16px; padding: 18px 24px 6px; background: #fff; }

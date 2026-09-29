@@ -1,6 +1,6 @@
 .ap-table-scroll { overflow-x: auto; }
 .ap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.ap-table th { font-size: 13px; font-weight: 700; color: var(--muted); text-align: right; padding: 10px 8px; height: 37px; border-bottom: 1px solid var(--line); }
+.ap-table th { font-size: 13px; font-weight: 700; color: var(--muted); text-align: start; padding: 10px 8px; height: 37px; border-bottom: 1px solid var(--line); }
 .ap-table td { font-size: 13px; padding: 8px; height: 57px; border-bottom: 1px solid var(--line); text-align: center; }
-.ap-table td.r { text-align: right; }
+.ap-table td.r { text-align: start; }
 .ap-table tr:last-child td { border-bottom: 0; }

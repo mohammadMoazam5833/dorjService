@@ -15,7 +15,8 @@
 .mv-search { width: 340px; height: 36px; background: #fff; border-radius: 8px; padding: 8px 12px; font-size: 13px; border: 1px solid #e0e0e0; font-family: inherit; }
 .mv-toolbar { display: flex; justify-content: space-between; align-items: center; }
 .mv-pagination { display: flex; align-items: center; gap: 10px; }
-.mv-page-btn { width: 28px; height: 28px; background: #fff; border-radius: 6px; padding: 1px 6px; font-size: 14px; color: #5f6368; border: 1px solid #e0e0e0; cursor: pointer; font-family: inherit; }
+.mv-page-btn { width: 34px; height: 34px; background: transparent; border: 0; padding: 0; font-size: 30px; font-weight: 300; line-height: 1; color: #5f6368; cursor: pointer; font-family: inherit; }
+.mv-page-btn:hover { color: #0d9488; }
 .mv-page-label { font-size: 12px; color: #5f6368; }
 .mv-empty { padding: 32px; color: #5f6368; }
 .mv-list { margin-top: 10px; }
@@ -24,6 +25,6 @@
 .mv-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .mv-from { width: 279px; font-size: 13px; color: #202124; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
 .mv-subject { flex: 1; font-size: 13px; color: #202124; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mv-date { width: 143px; font-size: 12px; color: #5f6368; flex-shrink: 0; text-align: left; }
+.mv-date { width: 143px; font-size: 12px; color: #5f6368; flex-shrink: 0; text-align: start; }
 .mv-meta { font-size: 13px; color: #3c4043; margin-bottom: 8px; }
 .mv-body { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; line-height: 22px; color: #202124; min-height: 80px; }

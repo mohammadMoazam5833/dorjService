@@ -1,13 +1,57 @@
-.res-root { position: fixed; bottom: 16px; left: 16px; z-index: 90; display: flex; flex-direction: column; align-items: flex-start; }
-.res-widget { display: flex; align-items: center; gap: 8px; width: 110px; height: 42px; padding: 0 14px; background: #fff; border: 1px solid #dde2e6; border-radius: 12px; box-shadow: rgba(7, 42, 82, 0.16) 0 12px 32px 0, rgba(7, 42, 82, 0.08) 0 2px 8px 0; font-size: 13px; color: #151a1f; cursor: pointer; user-select: none; }
-.res-widget .res-caret { display: flex; align-items: center; }
-.res-panel { width: 270px; margin-bottom: 10px; background: #fff; border-radius: 12px; box-shadow: rgba(7, 42, 82, 0.16) 0 12px 32px 0, rgba(7, 42, 82, 0.08) 0 2px 8px 0; padding: 8px 16px 16px; max-height: 70vh; overflow-y: auto; }
-.res-head { font-size: 14px; font-weight: 700; padding: 8px 0 2px; }
-.res-desc { font-size: 11px; color: #5f6368; line-height: 1.6; margin-bottom: 8px; }
-.res-metric { margin-bottom: 8px; }
-.res-metric-top { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; }
-.res-val { color: #151a1f; font-weight: 600; }
-.res-bar { height: 6px; background: #e8eaed; border-radius: 999px; overflow: hidden; margin-top: 4px; }
-.res-fill { height: 100%; background: #0d9488; border-radius: 999px; }
-.res-quota-title { font-size: 13px; font-weight: 700; margin-top: 12px; }
-.res-quota-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 5px 0; }
+.rw-root { position: relative; }
+
+.rw-trigger {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: #f8fafc;
+  border-radius: 10px; padding: 6px 12px;
+  cursor: pointer; font-family: inherit; font-size: 13.5px; color: #1c2b36;
+  transition: background 0.15s, border-color 0.15s; height: 40px;
+}
+.rw-trigger:hover { background: #eef3f8; border-color: #b8cfe0; }
+
+/* mini bar chart */
+.rw-mini-bars {
+  display: flex; align-items: flex-end; gap: 2.5px; height: 22px;
+}
+.rw-mini-bar {
+  width: 4px; min-height: 4px; border-radius: 2px; background: #3b82f6;
+  transition: height 0.3s;
+}
+.rw-mini-bar.gpu { background: #E8A317; }
+.rw-mini-bar.mem { background: #a855f7; }
+
+.rw-label { font-size: 13px; font-weight: 600; color: #0c1a33; }
+.rw-caret { display: flex; align-items: center; transition: transform 0.18s; }
+.rw-caret.open { transform: rotate(180deg); }
+
+/* panel */
+.rw-panel {
+  position: absolute; top: calc(100% + 8px); inset-inline-end: 0;
+  width: 280px; background: #fff;
+  border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(7,42,82,.14), 0 2px 8px rgba(7,42,82,.07);
+  z-index: 97; padding: 14px 16px 16px;
+}
+
+.rw-panel-head { font-size: 14px; font-weight: 700; color: #0c1a33; margin-bottom: 4px; }
+.rw-desc { font-size: 11px; color: #56657f; line-height: 1.6; margin-bottom: 12px; }
+
+.rw-metric { margin-bottom: 10px; }
+.rw-metric-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.rw-metric-label { font-size: 12px; color: #56657f; }
+.rw-metric-val { font-size: 12.5px; font-weight: 600; color: #0c1a33; }
+
+.rw-bar { height: 5px; background: #e8eaed; border-radius: 999px; overflow: hidden; }
+.rw-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+
+.rw-cost-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding: 8px 0 4px; }
+.rw-cost-label { font-size: 12px; color: #56657f; }
+.rw-cost-val { font-size: 12.5px; font-weight: 600; color: #0c1a33; }
+.rw-cost-val.gold { color: #b57d08; }
+
+.rw-divider { height: 1px; background: var(--line); margin: 10px 0; }
+.rw-quota-head { font-size: 12.5px; font-weight: 700; color: #0c1a33; margin-bottom: 6px; }
+.rw-quota-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f4f7f9; }
+.rw-quota-row:last-child { border-bottom: 0; }
+.rw-quota-label { font-size: 12px; color: #56657f; }
+.rw-quota-val { font-size: 12px; font-weight: 600; color: #0c1a33; }

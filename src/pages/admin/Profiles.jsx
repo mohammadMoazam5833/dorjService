@@ -44,7 +44,7 @@ export default function Profiles() {
 
   return (
     <>
-      <Tabs tabs={['تعداد پروفایل‌ها', 'SLA', 'بازراه‌اندازی‌های SLA']} active={sub} onSelect={setSub} />
+      <Tabs tabs={[`پروفایل‌ها (${all.length})`, 'SLA', 'بازراه‌اندازی‌های SLA']} active={sub} onSelect={setSub} />
       {sub === 0 && (
         <Card>
           <h2>مدیریت پروفایل‌ها</h2>
@@ -62,9 +62,9 @@ export default function Profiles() {
               { jsx: <Button variant="ghost" onClick={() => openEdit(p)}>ویرایش</Button> },
             ])} />
           <div className="ap-pager">
-            <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.max(0, p - 1))}>قبلی</button>
+            <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.max(0, p - 1))} aria-label="صفحه قبل">‹</button>
             <span className="ap-pager-label">{page + 1} / {pages}</span>
-            <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.min(pages - 1, p + 1))}>بعدی</button>
+            <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.min(pages - 1, p + 1))} aria-label="صفحه بعد">›</button>
           </div>
         </Card>
       )}

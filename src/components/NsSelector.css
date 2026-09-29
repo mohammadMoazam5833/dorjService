@@ -1,12 +1,88 @@
-.ns-selector { display: inline-flex; position: relative; padding: 8px; }
-.ns-btn { display: flex; align-items: center; border: 0; background: none; cursor: pointer; font-family: inherit; border-radius: 3px; padding: 9.8px 8px; font-size: 14px; color: #3c4043; }
-.ns-btn:hover { background: #f1f3f4; }
-.ns-icon { display: flex; align-items: center; padding-left: 7px; }
-.ns-btn article { display: flex; align-items: center; }
-.ns-btn .text { font-size: 14px; color: #3c4043; }
-.ns-btn .owner-label { font-size: 11.2px; color: #3c4043; margin-inline-start: 1px; }
+.ns-root { display: flex; align-items: center; gap: 12px; position: relative; }
+
+/* trigger button */
+.ns-btn {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: #f8fafc;
+  border-radius: 10px; padding: 6px 10px 6px 12px;
+  cursor: pointer; font-family: inherit; font-size: 14px; color: #1c2b36;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 168px;
+}
+.ns-btn:hover { background: #eef3f8; border-color: #b8cfe0; }
+
+.ns-avatar {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: #dbeafe; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.ns-btn-body { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.ns-name { font-size: 13.5px; font-weight: 600; color: #0c1a33; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ns-role {
+  font-size: 11px; font-weight: 600; color: #0d9488;
+  background: #ccfbf1; border-radius: 4px; padding: 1px 5px; flex-shrink: 0;
+}
+
+.ns-chevron { display: flex; align-items: center; margin-inline-start: auto; transition: transform 0.18s; }
+.ns-chevron.open { transform: rotate(180deg); }
+
+/* quota strip */
+.ns-quota-strip {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: #56657f;
+  background: #f4f7f9; border: 1px solid var(--line);
+  border-radius: 8px; padding: 4px 10px; white-space: nowrap;
+}
+.ns-quota-item { display: flex; align-items: center; gap: 4px; }
+.ns-quota-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ns-quota-dot.cpu { background: #3b82f6; }
+.ns-quota-dot.mem { background: #a855f7; }
+.ns-quota-sep { width: 1px; height: 12px; background: var(--line); }
+
+/* scrim */
 .ns-scrim { position: fixed; inset: 0; z-index: 96; }
-.ns-dropdown { position: absolute; top: 64px; inset-inline-start: 8px; min-width: 164px; max-height: 60vh; overflow-y: auto; background: #fff; border-radius: 2px; box-shadow: rgba(0, 0, 0, 0.2) 0 8px 24px 0, rgba(0, 0, 0, 0.14) 0 2px 6px 0; z-index: 97; padding: 8px 0; }
-.ns-item { display: flex; align-items: center; height: 48px; padding: 0 16px; font-size: 14px; color: #202124; cursor: pointer; }
-.ns-item:hover { background: #f1f3f4; }
-.ns-item.sel { color: #007dfc; font-weight: 700; }
+
+/* dropdown */
+.ns-dropdown {
+  position: absolute; top: calc(100% + 8px); inset-inline-start: 0;
+  min-width: 240px; max-height: 56vh;
+  background: #fff; border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 8px 32px rgba(7,42,82,.14), 0 2px 8px rgba(7,42,82,.07);
+  z-index: 97; overflow: hidden; display: flex; flex-direction: column;
+}
+
+/* search */
+.ns-search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-bottom: 1px solid #f0f2f5;
+}
+.ns-search {
+  flex: 1; border: 0; outline: none; font-family: inherit;
+  font-size: 13px; background: transparent; color: #0c1a33;
+}
+.ns-search::placeholder { color: #b0b9c4; }
+
+/* list */
+.ns-list { overflow-y: auto; padding: 6px 0; }
+.ns-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px; cursor: pointer; transition: background 0.12s;
+}
+.ns-item:hover { background: #f4f7f9; }
+.ns-item.sel { background: #f0fdf9; }
+.ns-item.sel .ns-item-name { color: #0d9488; font-weight: 700; }
+
+.ns-item-avatar {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: #f4f7f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ns-item.sel .ns-item-avatar { background: #ccfbf1; }
+
+.ns-item-name { flex: 1; font-size: 13px; color: #1c2b36; }
+.ns-item-role {
+  font-size: 10.5px; font-weight: 600; color: #0d9488;
+  background: #ccfbf1; border-radius: 4px; padding: 1px 5px;
+}
+
+.ns-empty { padding: 16px 14px; font-size: 13px; color: #8fa3b8; text-align: center; }

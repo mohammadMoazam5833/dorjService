@@ -1,0 +1,10 @@
+{
+  "description": "This web application streamlines service management for businesses, offering an intuitive interface for tracking and organizing tasks efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

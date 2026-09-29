@@ -1,32 +1,32 @@
-import { useState } from 'react'
 import Card, { Hint } from '../../components/Card.jsx'
+import Search from '../../components/Search.jsx'
 import Button from '../../components/Button.jsx'
-import { useApi, apiPost } from '../../lib/api.js'
+import Badge from '../../components/Badge.jsx'
+import { useApi } from '../../lib/api.js'
+import { faNum } from '../../lib/format.js'
+
+const MODEL_STATUS = {
+  serving: 'در حال سرو', downloaded: 'دانلودشده', not_downloaded: 'دانلود نشده',
+  deploy_blocked: 'غیرقابل دیپلوی', downloading: 'در حال دانلود', deploying: 'در حال استقرار',
+}
 
 export default function ModelsAdmin() {
   const { data } = useApi('/admin-panel/api/admin/models', [])
   const list = Array.isArray(data) ? data : []
-  const [toast, setToast] = useState('')
-  const act = async (label, m) => {
-    await apiPost('/admin-panel/api/admin/models/' + (label === 'استقرار' ? 'deploy' : 'remove'), { id: m.id })
-    setToast(label + ' «' + m.display_name + '» انجام شد.')
-    setTimeout(() => setToast(''), 3000)
-  }
   return (
-    <>
+    <div className="model-cards">
       {list.map(m => (
-        <Card key={m.id}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>{m.display_name}</h3>
-          <Hint>{m.repo || m.engine}</Hint>
-          {m.stop_note && <Hint>{m.stop_note}</Hint>}
-          <div className="actions" style={{ marginTop: 10 }}>
-            <Button onClick={() => act('استقرار', m)}>استقرار</Button>
-            <Button variant="ghost" onClick={() => act('حذف', m)}>حذف</Button>
+        <div key={m.id} className="model-card">
+          <b style={{ fontSize: 15 }}>{m.display_name}</b>
+          <Hint>{m.engine} · {faNum(m.gpu_required)}× GPU{m.node ? ` · ${m.node}` : ''}</Hint>
+          <div><Badge ok={m.status === 'serving'}>{MODEL_STATUS[m.status] || m.status}</Badge></div>
+          <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{m.litellm_alias ? `نام مستعار: ${m.litellm_alias}` : '—'}</div>
+          <div style={{ marginTop: 'auto', display: 'flex', gap: 8 }}>
+            <Button>استقرار</Button><Button variant="danger">حذف</Button>
           </div>
-        </Card>
+        </div>
       ))}
-      {list.length === 0 && <Card><Hint>مدلی یافت نشد.</Hint></Card>}
-      {toast && <div className="app-toast">{toast}</div>}
-    </>
+      {list.length === 0 && <Card className="empty"><Hint>مدلی ثبت نشده است.</Hint></Card>}
+    </div>
   )
 }

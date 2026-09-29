@@ -13,7 +13,7 @@ const SECTIONS = [
 
 export default function Help() {
   return (
-    <AppShell active="">
+    <AppShell active="راهنما">
       <div className="help-view">
         <div className="help-title">
           <a className="help-back" href="#/"><Icon name="caret" size={18} color="#0d9488" style={{ transform: 'rotate(90deg)' }} /><span>بازگشت</span></a>

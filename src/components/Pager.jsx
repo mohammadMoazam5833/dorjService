@@ -2,10 +2,10 @@ import './Pager.css'
 
 export default function Pager() {
   return (
-    <div className="pager">
-      <span className="pg-btn">›</span>
+    <nav className="pager" aria-label="صفحه‌بندی">
+      <button className="pg-btn" type="button" aria-label="صفحه قبل">‹</button>
       <span className="pg-info">۱ / ۱</span>
-      <span className="pg-btn">‹</span>
-    </div>
+      <button className="pg-btn" type="button" aria-label="صفحه بعد">›</button>
+    </nav>
   )
 }
