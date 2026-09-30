@@ -9,6 +9,7 @@ const FA_FOLDER = {
   Drafts: 'پیش‌نویس',
   Junk: 'هرزنامه',
   Sent: 'ارسال‌شده',
+  Archive: 'آرشیو',
   Trash: 'زباله‌دان',
 }
 
@@ -17,6 +18,7 @@ const FOLDER_ICONS = {
   Drafts: <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>,
   Junk: <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>,
   Sent: <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" /></svg>,
+  Archive: <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5 6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z" /></svg>,
   Trash: <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>,
 }
 
@@ -25,6 +27,7 @@ const FOLDER_COLORS = {
   Drafts: '#8a94a6',
   Junk: '#e8a03c',
   Sent: '#0d9488',
+  Archive: '#7c3aed',
   Trash: '#d05a5a',
 }
 
