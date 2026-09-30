@@ -49,10 +49,10 @@ export default function Dashboard() {
           </div>
           <div className="dash-tiles" style={{ gridArea: 'tiles' }}>
             <Tile icon="book" color="teal" label="نوت‌بوک‌های فعال" value={sum ? faNum(sum.active_notebooks) : '۰'} />
-            <Tile icon="view-module" color="teal" label="مصرف حافظه شما" value={sum ? pct(c.memory_pct) : '۰.۰'} suffix="%" small />
+            <Tile icon="view-module" color="teal" label="مصرف حافظه شما" value={sum ? pct(c.memory_pct) : '۰.۰'} suffix="%" />
             <Tile icon="assessment" color="amber" label="مصرف CPU شما" value={sum ? pct(c.cpu_pct) : '۰.۰'} suffix="%" />
             <Tile icon="supervisor" color="blue" label="تعداد پروفایل‌ها" value={sum ? faNum(sum.profile_count) : '۱'} />
-            <Tile icon="wallet" color="blue" label="هزینه ماهانه" value={sum ? rial(sum.monthly_cost?.amount_irr ?? 0) : rial(0)} small />
+            <Tile icon="wallet" color="blue" label="هزینه ماهانه" value={sum ? rial(sum.monthly_cost?.amount_irr ?? 0) : rial(0)} />
             <Tile icon="save" color="purple" label="مصرف فضای ذخیره‌سازی شما" value={sum ? pct(c.storage_pct) : '۰.۰'} suffix="%" />
           </div>
           <div className="paper-card section" style={{ gridArea: 'usage' }}>
