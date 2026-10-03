@@ -92,3 +92,30 @@ test('notebook options, branding, settings, broadcast, requests load', async ({ 
   await expect(page.locator('.ak-table')).toBeVisible({ timeout: 30_000 })
   expect(bad, bad.join('\n')).toEqual([])
 })
+
+// Read-only on purpose: model lifecycle, gateway routes, rate limits and GPU bindings are live cluster state.
+test('models, gateway, rate limits, gpu management load', async ({ page }) => {
+  const bad = []
+  page.on('response', r => { const u = new URL(r.url()); if (u.pathname.startsWith('/admin-panel/api/') && r.status() >= 400) bad.push(`${r.status()} ${u.pathname}`) })
+  await login(page, G, process.env.E2E_ADMIN_USER, process.env.E2E_ADMIN_PASS)
+  const sub = name => page.locator('.ak-tabs button').filter({ hasText: new RegExp(`^${name}$`) })
+  await openTab(page, 'مدل‌ها')
+  await expect(page.locator('.md-grid .md-tile, .md-grid > *').first()).toBeVisible({ timeout: 60_000 })
+  await sub('جستجو').click()
+  await sub('تنظیمات').click()
+  await sub('Gateway').click()
+  await expect(page.locator('.ak-table').first()).toBeVisible({ timeout: 30_000 })
+  await sub('محدودیت نرخ').click()
+  for (const st of ['مصرف زنده', 'پلن‌ها', 'هزینه‌ی مدل', 'تخصیص‌ها', 'سیاست‌ها']) {
+    await sub(st).click({ timeout: 30_000 })
+  }
+  await openTab(page, 'مدیریت GPU')
+  await expect(page.locator('.ak-card h2', { hasText: 'مدیریت GPU' })).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.gp-seg').first()).toBeVisible({ timeout: 30_000 })
+  await sub('مصرف \\(جدول\\)').click()
+  await expect(page.locator('.ak-table').first()).toBeVisible()
+  await sub('مصرف \\(نمودار\\)').click()
+  await expect(page.locator('.gp-pie, .ak-muted').first()).toBeVisible()
+  await sub('سرمایه').click()
+  expect(bad, bad.join('\n')).toEqual([])
+})
