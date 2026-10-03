@@ -119,3 +119,45 @@ test('models, gateway, rate limits, gpu management load', async ({ page }) => {
   await sub('سرمایه').click()
   expect(bad, bad.join('\n')).toEqual([])
 })
+
+// Read-only: security findings, metrics/traces and unit budgets are live cluster state.
+test('security, monitoring, assistant history, units, my unit load', async ({ page }) => {
+  test.setTimeout(180_000)
+  const bad = []
+  page.on('response', r => { const u = new URL(r.url()); if (u.pathname.startsWith('/admin-panel/api/') && r.status() >= 400) bad.push(`${r.status()} ${u.pathname}`) })
+  await login(page, G, process.env.E2E_ADMIN_USER, process.env.E2E_ADMIN_PASS)
+  const sub = name => page.locator('.ak-tabs button').filter({ hasText: new RegExp(`^${name}$`) })
+  await openTab(page, 'امنیت')
+  await expect(page.locator('.sec-cards .sec-card').first()).toBeVisible({ timeout: 60_000 })
+  for (const v of ['پیکربندی نادرست', 'انطباق', 'CIS Benchmark', 'هشدارهای زمان اجرا', 'آسیب‌پذیری‌ها']) {
+    await sub(v).click()
+    await expect(page.locator('.ak-card').getByText('در حال بارگذاری…')).toHaveCount(0, { timeout: 60_000 })
+  }
+  const vulnRow = page.locator('tr.sec-click').first()
+  await expect(vulnRow).toBeVisible({ timeout: 60_000 })
+  {
+    await vulnRow.click()
+    await expect(page.locator('.ak-modal .ak-table')).toBeVisible({ timeout: 30_000 })
+    await page.locator('.ak-modal').getByRole('button', { name: 'بستن' }).click()
+  }
+  await openTab(page, 'مانیتورینگ')
+  await expect(page.locator('.mo-card').first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.mo-card polyline').first()).toBeAttached({ timeout: 90_000 })
+  await sub('Traces').click()
+  await expect(page.locator('.ak-toolbar .ak-muted').filter({ hasText: /trace|Tempo|error/i }).first()).toBeVisible({ timeout: 60_000 })
+  const tr = page.locator('tr.sec-click').first()
+  if (await tr.count()) {
+    await tr.click()
+    await expect(page.locator('.tr-row').first()).toBeVisible({ timeout: 30_000 })
+  }
+  await openTab(page, 'دستیار هوشمند')
+  await expect(page.locator('.ts-messages')).toBeVisible()
+  await sub('گفتگوهای قبلی').click()
+  await expect(page.locator('.ak-card .ak-table')).toBeVisible({ timeout: 30_000 })
+  await openTab(page, 'واحدها')
+  await expect(page.locator('.ak-card h2', { hasText: 'واحدها' })).toBeVisible()
+  await expect(page.locator('.ak-card').getByText('در حال بارگذاری…')).toHaveCount(0, { timeout: 30_000 })
+  await openTab(page, 'واحد من')
+  await expect(page.locator('.ak-card').getByText('در حال بارگذاری…')).toHaveCount(0, { timeout: 30_000 })
+  expect(bad, bad.join('\n')).toEqual([])
+})

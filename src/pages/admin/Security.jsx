@@ -36,6 +36,7 @@ export default function Security() {
   const [detail, setDetail] = useState(null)
   const [muteInput, setMuteInput] = useState('')
   const timer = useRef(null)
+  const seq = useRef(0)
   const [qLive, setQLive] = useState('')
 
   const loadSummary = async () => {
@@ -44,6 +45,7 @@ export default function Security() {
   }
   const loadList = async () => {
     if (view === 'cis') return
+    const my = ++seq.current
     setListLoading(true)
     const p = new URLSearchParams({ page: String(page) })
     if (q.trim()) p.set('q', q.trim())
@@ -51,18 +53,20 @@ export default function Security() {
     if (view === 'falco' && priority) p.set('priority', priority)
     if (severity && view !== 'falco') p.set('severity', severity)
     const r = await getJson(`${API}/${PATHS[view]}?${p}`, { ttlMs: 0 })
+    if (my !== seq.current) return // a newer request (other view/page/filter) owns the list now
     setListLoading(false)
-    if (r.error) { notifyError(r.error.message); setList({ rows: [], total: 0, total_pages: 1 }); return }
-    setList(r.data || {})
+    if (r.error) { notifyError(r.error.message); setList({ rows: [], total: 0, total_pages: 1, view }); return }
+    setList({ ...(r.data || {}), view })
     if (view === 'compliance' && !report && r.data?.report) setReport(r.data.report)
   }
   useEffect(() => { loadSummary(); getJson(`${API}/cis`).then(r => r.data && setCis(r.data)) }, [])
   useEffect(() => { loadList() }, [view, page, q, severity, priority, report])
 
-  const rows = list.rows || []
+  // rows from the previous view must never render under the new view's columns
+  const rows = list.view === view ? list.rows || [] : []
   const t = useTable(rows, { keys: [], sort: { key: '', dir: 'asc' }, per: 1000 })
   const cisT = useTable(cis?.failures || [], { keys: ['id', 'desc', 'status'], sort: { key: 'status', dir: 'asc' } })
-  const pick = v => { if (v === view) return; setView(v); setPage(1); setSeverity(''); setPriority(''); setQ(''); setQLive('') }
+  const pick = v => { if (v === view) return; setList({ rows: [], total: 0, total_pages: 1 }); setView(v); setPage(1); setSeverity(''); setPriority(''); setQ(''); setQLive('') }
   const onSearch = v => { setQLive(v); clearTimeout(timer.current); timer.current = setTimeout(() => { setPage(1); setQ(v) }, 350) }
   const openDetail = async r => {
     if (view !== 'vuln') return
