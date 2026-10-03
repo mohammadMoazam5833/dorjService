@@ -1,117 +1,101 @@
-import { useState } from 'react'
-import Tabs from '../../components/Tabs.jsx'
-import Card, { Hint } from '../../components/Card.jsx'
-import Table, { Cell } from '../../components/Table.jsx'
-import Search from '../../components/Search.jsx'
-import Button from '../../components/Button.jsx'
-import { useApi } from '../../lib/api.js'
-import { quotaCell, gpuCell } from '../../lib/format.js'
+import { useState, useEffect } from 'react'
+import { useApi, invalidate } from '../../lib/api.js'
+import { getJson } from '../../lib/http.js'
 import ErrorNote from '../../components/ErrorNote.jsx'
-import { soonProps, SOON } from '../../lib/soon.js'
+import { useTable, useWhoami, Pill } from './kit.jsx'
+import ProfileEdit, { tierLabel, nodeDetail, ScheduleRow } from './ProfileEdit.jsx'
+
+const P = '/admin-panel/api/admin/profiles'
+const quota = (p, k) => p.resource_quota?.hard?.[k] || '—'
+const gpuQuota = p => {
+  const h = p.resource_quota?.hard
+  const ks = h ? Object.keys(h).filter(k => k.startsWith('nvidia.com/')) : []
+  return ks.length ? ks.map(k => `${h[k]}× ${k.split('/').pop()}`).join('، ') : '—'
+}
+const within7 = d => d && new Date(`${d}T00:00:00Z`).getTime() <= new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`).getTime() + 7 * 864e5
 
 export default function Profiles() {
-  const [sub, setSub] = useState(0)
-  const { data, error } = useApi('/admin-panel/api/admin/profiles', [])
-  const all = Array.isArray(data) ? data : []
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(0)
-  const [edit, setEdit] = useState(null)
-  const [cpu, setCpu] = useState('')
-  const [mem, setMem] = useState('')
-  const [sto, setSto] = useState('')
-  const [tier, setTier] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState('')
-  const list = all.filter(p => !query || ((p.name || '') + (p.owner || '')).toLowerCase().includes(query.toLowerCase()))
-  const per = 10
-  const pages = Math.max(1, Math.ceil(list.length / per))
-  const shown = list.slice(page * per, page * per + per)
+  const who = useWhoami()
+  const isSuper = !!who?.is_super
+  const { data, error, loading, reload } = useApi(P, [])
+  const profiles = Array.isArray(data) ? data : []
+  const t = useTable(profiles, { keys: ['name', 'owner'], sort: { key: 'name', dir: 'asc' } })
+  const [sub, setSub] = useState('list')
+  const [editing, setEditing] = useState(null)
+  const [disc, setDisc] = useState({ vendors: [], cluster: null })
+  const [nodes, setNodes] = useState([])
+  const [sched, setSched] = useState([])
 
-  const openEdit = p => {
-    setEdit(p)
-    const h = p.resource_quota?.hard || {}
-    setCpu(String(h['limits.cpu'] ?? h.cpu ?? ''))
-    setMem(String(h['limits.memory'] ?? h.memory ?? ''))
-    setSto(String(h['requests.storage'] ?? h.storage ?? ''))
-    setTier(p.tier || '')
+  const loadSla = async () => {
+    const [n, s] = await Promise.all([
+      getJson(`/admin-panel/api/admin/sla-nodes?t=${Date.now()}`, { ttlMs: 0 }),
+      getJson(`/admin-panel/api/admin/sla-tier-schedule?t=${Date.now()}`, { ttlMs: 0 }),
+    ])
+    setNodes(n.data || [])
+    setSched((s.data || []).filter(e => e.status === 'pending' && within7(e.scheduled_for)))
   }
+  useEffect(() => {
+    getJson('/admin-panel/api/admin/gpu-discovery').then(r => setDisc({ vendors: r.data?.vendors || [], cluster: r.data?.cluster || null }))
+    loadSla()
+  }, [])
+
+  if (editing) {
+    return <ProfileEdit profile={editing} vendors={disc.vendors} cluster={disc.cluster} reloadSla={loadSla}
+      onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); invalidate(P); reload(); loadSla() }} />
+  }
+
+  const subtabs = isSuper ? [['list', `پروفایل‌ها (${profiles.length})`], ['sla-nodes', 'نودهای SLA'], ['sla-restarts', 'راه‌اندازی‌های SLA']] : [['list', 'پروفایل‌ها']]
   return (
     <>
-      <Tabs tabs={[`پروفایل‌ها (${all.length})`, 'SLA', 'بازراه‌اندازی‌های SLA']} active={sub} onSelect={setSub} />
-      {sub === 0 && (
-        <Card>
-          <h2>مدیریت پروفایل‌ها</h2>
+      <nav className="ak-tabs">{subtabs.map(([id, l]) => <button key={id} className={sub === id ? 'on' : ''} onClick={() => setSub(id)}>{l}</button>)}</nav>
+
+      {sub === 'list' && (
+        <div className="ak-card">
+          <div className="ak-toolbar"><h2 style={{ margin: 0 }}>مدیریت پروفایل‌ها</h2><div className="spacer" />{t.search('جستجوی نام یا مالک…')}</div>
           <ErrorNote error={error} />
-          <Search value={query} onChange={v => { setQuery(v); setPage(0) }} />
-          <Table
-            cols={[Cell('نام', 'r'), Cell('مالک', 'r'), Cell('CPU'), Cell('Memory'), Cell('فضای ذخیره‌سازی'), Cell('GPU'), Cell('سطح SLA'), Cell('ایجاد شده'), Cell('')]}
-            rows={shown.map(p => [
-              p.name, p.owner,
-              quotaCell(p.resource_quota?.hard, 'cpu'),
-              quotaCell(p.resource_quota?.hard, 'memory'),
-              quotaCell(p.resource_quota?.hard, 'storage'),
-              gpuCell(p.resource_quota?.hard),
-              p.tier || '-',
-              (p.created_at || '-').slice(0, 10),
-              { jsx: <Button variant="ghost" {...soonProps}>ویرایش</Button> },
-            ])} />
-          <div className="ap-pager">
-            <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.max(0, p - 1))} aria-label="صفحه قبل">‹</button>
-            <span className="ap-pager-label">{page + 1} / {pages}</span>
-            <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.min(pages - 1, p + 1))} aria-label="صفحه بعد">›</button>
-          </div>
-        </Card>
-      )}
-      {sub === 1 && <SlaNodes />}
-      {sub === 2 && <SlaRestarts />}
-      {toast && <div className="app-toast">{toast}</div>}
-      {edit && (
-        <>
-          <div className="modal-backdrop" onClick={() => setEdit(null)} />
-          <div className="vw-modal" dir="rtl">
-            <h2>ویرایش پروفایل: {edit.name}</h2>
-            <label className="field-label">مالک</label>
-            <input className="vw-field" value={edit.owner || ''} readOnly />
-            <label className="field-label">CPU (هسته)</label>
-            <input className="vw-field" type="number" value={cpu} onChange={e => setCpu(e.target.value)} />
-            <label className="field-label">حافظه (GiB)</label>
-            <input className="vw-field" type="number" value={mem} onChange={e => setMem(e.target.value)} />
-            <label className="field-label">فضای ذخیره‌سازی (GiB)</label>
-            <input className="vw-field" type="number" value={sto} onChange={e => setSto(e.target.value)} />
-            <label className="field-label">سطح SLA</label>
-            <input className="vw-field" value={tier} onChange={e => setTier(e.target.value)} />
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setEdit(null)}>انصراف</button>
-              <button className="btn-primary" {...soonProps}>ذخیره</button>
+          {loading && !error ? <p className="ak-muted">در حال بارگذاری…</p> : (
+            <div className="ak-table-scroll">
+              <table className="ak-table">
+                <thead><tr>{t.th('name', 'نام')}{t.th('owner', 'مالک')}{t.th('cpu', 'CPU', p => quota(p, 'cpu'))}{t.th('memory', 'حافظه', p => quota(p, 'memory'))}
+                  {t.th('storage', 'فضای ذخیره‌سازی', p => quota(p, 'requests.storage'))}<th>GPU</th>{t.th('tier', 'سطح SLA')}{t.th('created_at', 'ایجاد')}<th /></tr></thead>
+                <tbody>{t.shown.map(p => (
+                  <tr key={p.name}>
+                    <td><bdi dir="ltr">{p.name}</bdi></td><td><bdi dir="ltr">{p.owner || '—'}</bdi></td>
+                    <td dir="ltr">{quota(p, 'cpu')}</td><td dir="ltr">{quota(p, 'memory')}</td><td dir="ltr">{quota(p, 'requests.storage')}</td>
+                    <td dir="ltr">{gpuQuota(p)}</td><td>{tierLabel(p.tier)}</td><td>{(p.created_at || '').slice(0, 10)}</td>
+                    <td><button className="ak-btn" onClick={() => setEditing(p)}>ویرایش</button></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+              {t.pager}
+              <p className="ak-muted">ساخت پروفایل جدید از تب «کاربران» ← «افزودن کاربر» انجام می‌شود (کاربر Keycloak و پروفایل با هم ساخته می‌شوند).</p>
             </div>
-          </div>
-        </>
+          )}
+        </div>
+      )}
+
+      {sub === 'sla-nodes' && (
+        <div className="ak-card">
+          <h2>نودهای SLA</h2>
+          {nodes.map(n => (
+            <div key={n.name} className="ak-toolbar" style={{ borderBottom: '1px solid #f0f3f7', paddingBottom: 8 }}>
+              <div><bdi dir="ltr">{n.name}</bdi><div className="ak-muted">{nodeDetail(n)}</div></div>
+              <div className="spacer" />
+              {n.reserved_for ? <span className="ak-muted">رزرو برای <bdi dir="ltr">{n.reserved_for}</bdi></span> : <Pill ok>آزاد</Pill>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {sub === 'sla-restarts' && (
+        <div className="ak-card">
+          <h2>راه‌اندازی‌های SLA (۷ روز آینده)</h2>
+          {sched.length === 0 ? <p className="ak-muted">در ۷ روز آینده راه‌اندازی زمان‌بندی‌شده‌ای وجود ندارد.</p> : (
+            <table className="ak-table"><thead><tr><th>Namespace</th><th>سطح</th><th>تاریخ راه‌اندازی دوباره</th><th /></tr></thead>
+              <tbody>{sched.map(e => <ScheduleRow key={e.id} e={e} withNs onChange={loadSla} />)}</tbody></table>
+          )}
+        </div>
       )}
     </>
   )
-}
-
-export function SlaNodes() {
-  const { data, error } = useApi('/admin-panel/api/admin/sla-nodes', [])
-  const list = Array.isArray(data) ? data : []
-  const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d])
-  return (
-    <Card title="نودهای SLA">
-      <ErrorNote error={error} />
-      {list.map(n => (
-        <div key={n.name} style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 14, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
-            <b>{n.name}</b>
-            <div className="hint">{fa(n.memory_capacity_gib)} GiB · {fa(n.cpu_capacity_cores)} هسته · {fa(n.pod_count)} پاد — {n.gpu_summary}</div>
-          </div>
-          <span className="badge badge-success">{n.reserved_for ? 'رزرو شده' : 'آزاد'}</span>
-        </div>
-      ))}
-    </Card>
-  )
-}
-
-export function SlaRestarts() {
-  // /api/admin/sla-tier-schedule is wired in Phase 3; never claim "nothing pending" without data
-  return <Card title="ری‌استارت‌های SLA (۷ روز آینده)"><Hint>این بخش در فاز بعدی به سرویس واقعی متصل می‌شود — {SOON}.</Hint></Card>
 }

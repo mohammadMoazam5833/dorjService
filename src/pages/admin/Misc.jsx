@@ -2,7 +2,7 @@ import { SOON } from '../../lib/soon.js'
 
 // Phase 3 wires these tabs to kubeflow-admin-panel; until then they point to the platform's panel
 // instead of showing placeholder data.
-function SoonPanel({ title }) {
+export function SoonPanel({ title }) {
   return (
     <div className="paper-card section" style={{ padding: 24 }}>
       <h3 style={{ marginTop: 0 }}>{title}</h3>
