@@ -124,7 +124,9 @@ test('models, gateway, rate limits, gpu management load', async ({ page }) => {
 test('security, monitoring, assistant history, units, my unit load', async ({ page }) => {
   test.setTimeout(180_000)
   const bad = []
-  page.on('response', r => { const u = new URL(r.url()); if (u.pathname.startsWith('/admin-panel/api/') && r.status() >= 400) bad.push(`${r.status()} ${u.pathname}`) })
+  // Tempo itself can be down (2026-10-03: tempo-0 CrashLoopBackOff, PVC full) - the proxy's 5xx is
+  // the backend's state, not a UI bug; the Traces tab must then show that error instead of hanging.
+  page.on('response', r => { const u = new URL(r.url()); if (u.pathname.startsWith('/admin-panel/api/') && !u.pathname.startsWith('/admin-panel/api/admin/tempo/') && r.status() >= 400) bad.push(`${r.status()} ${u.pathname}`) })
   await login(page, G, process.env.E2E_ADMIN_USER, process.env.E2E_ADMIN_PASS)
   const sub = name => page.locator('.ak-tabs button').filter({ hasText: new RegExp(`^${name}$`) })
   await openTab(page, 'امنیت')
@@ -144,7 +146,8 @@ test('security, monitoring, assistant history, units, my unit load', async ({ pa
   await expect(page.locator('.mo-card').first()).toBeVisible({ timeout: 30_000 })
   await expect(page.locator('.mo-card polyline').first()).toBeAttached({ timeout: 90_000 })
   await sub('Traces').click()
-  await expect(page.locator('.ak-toolbar .ak-muted').filter({ hasText: /trace|Tempo|error/i }).first()).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.ak-toolbar .ak-muted').filter({ hasText: /trace|Tempo|error|HTTP/i }).first()).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.ak-card').getByText('در حال جستجو…')).toHaveCount(0, { timeout: 60_000 })
   const tr = page.locator('tr.sec-click').first()
   if (await tr.count()) {
     await tr.click()

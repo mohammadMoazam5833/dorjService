@@ -56,7 +56,7 @@ table.ak-table td.ak-actions-cell { white-space: nowrap; }
 .ak-suggest > div { padding: 8px 12px; cursor: pointer; font-size: 13px; }
 .ak-suggest > div:hover { background: #f4f7fb; }
 .gp-seg { display: inline-flex; direction: ltr; }
-.gp-seg button { border: 1px solid #dde5f0; background: #fff; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+.gp-seg button { white-space: nowrap; border: 1px solid #dde5f0; background: #fff; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 12px; }
 .gp-seg button:first-child { border-radius: 6px 0 0 6px; }
 .gp-seg button:last-child { border-radius: 0 6px 6px 0; border-inline-start: 0; }
 .gp-seg button.on { background: #1E3A8A; border-color: #1E3A8A; color: #fff; }
