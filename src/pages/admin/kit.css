@@ -55,3 +55,20 @@ table.ak-table td.ak-actions-cell { white-space: nowrap; }
 .ak-suggest { position: absolute; z-index: 20; inset-inline: 0; top: 100%; background: #fff; border: 1px solid #dde5f0; border-radius: 10px; box-shadow: 0 10px 30px -12px rgba(0,0,0,.3); max-height: 260px; overflow: auto; }
 .ak-suggest > div { padding: 8px 12px; cursor: pointer; font-size: 13px; }
 .ak-suggest > div:hover { background: #f4f7fb; }
+.gp-seg { display: inline-flex; direction: ltr; }
+.gp-seg button { border: 1px solid #dde5f0; background: #fff; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+.gp-seg button:first-child { border-radius: 6px 0 0 6px; }
+.gp-seg button:last-child { border-radius: 0 6px 6px 0; border-inline-start: 0; }
+.gp-seg button.on { background: #1E3A8A; border-color: #1E3A8A; color: #fff; }
+.gp-seg button:disabled { opacity: .5; cursor: not-allowed; }
+.gp-note { font-size: 11.5px; color: #8fa3b8; white-space: normal; max-width: 320px; margin: 4px auto 0; }
+.gp-pie-wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+.gp-pie { width: 220px; height: 220px; flex: none; }
+.gp-slice { stroke: #fff; stroke-width: 1.5; }
+.gp-slice.click, .gp-legend-row.click { cursor: pointer; }
+.gp-slice.click:hover, .gp-legend-row.click:hover { opacity: .75; }
+.gp-legend { display: flex; flex-direction: column; gap: 6px; min-width: 220px; font-size: 13px; }
+.gp-legend-row { display: flex; align-items: center; gap: 8px; }
+.gp-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+tr.gp-kind { cursor: pointer; }
+tr.gp-kind:hover, tr.gp-kind.on { background: #eef3fb; }

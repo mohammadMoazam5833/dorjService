@@ -4,7 +4,7 @@ import Icon from '../../components/Icon.jsx'
 import Profiles from './Profiles.jsx'
 import Users from './Users.jsx'
 import Gpu from './Gpu.jsx'
-import ModelsAdmin from './ModelsAdmin.jsx'
+import Models from './Models.jsx'
 import Groups from './Groups.jsx'
 import Access from './Access.jsx'
 import NotebookOptions from './NotebookOptions.jsx'
@@ -54,7 +54,7 @@ function renderPage(id) {
     case 'access':           return <Access />
     case 'groups':           return <Groups />
     case 'notebook-options': return <NotebookOptions />
-    case 'models':           return <ModelsAdmin />
+    case 'models':           return <Models />
     case 'gpu-passthrough':  return <Gpu />
     case 'monitoring':       return <Monitoring />
     case 'branding':         return <Branding />
