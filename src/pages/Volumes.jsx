@@ -505,8 +505,7 @@ export function Vms() {
   }
   const vmTransitional = (Array.isArray(data) ? data : []).some(v => !['Running', 'Stopped'].includes(v.status))
   useEffect(() => {
-    if (!vmTransitional) return
-    const t = setInterval(vmRefresh, 5000)
+    const t = setInterval(vmRefresh, vmTransitional ? 5000 : 15000)
     return () => clearInterval(t)
   }, [vmTransitional])
   const [query, setQuery] = useState('')

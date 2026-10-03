@@ -54,13 +54,13 @@ export default function Notebooks() {
   const raw = Array.isArray(data) ? data : []
   // the drawer follows the live row, not the snapshot taken when it was opened
   const detailsNb = details ? raw.find(n => n.name === details.name) || details : null
-  // poll while any notebook is between states, so status/actions never go stale
-  const transitionalCount = raw.filter(n => ['Pending', 'Stopping', 'Terminating'].includes(n.status)).length
+  // always keep the list live: fast while anything is between states or erroring (the backend
+  // reports transient "warning" phases, e.g. ContainersNotReady while an image pulls), slow otherwise
+  const unsettled = raw.some(n => !['Running', 'Stopped'].includes(n.status))
   useEffect(() => {
-    if (!transitionalCount) return
-    const t = setInterval(() => { invalidate('/api/notebooks'); reload() }, 5000)
+    const t = setInterval(() => { invalidate('/api/notebooks'); reload() }, unsettled ? 5000 : 15000)
     return () => clearInterval(t)
-  }, [transitionalCount, reload])
+  }, [unsettled, reload])
   const list = useMemo(() => {
     const q = query.trim().toLowerCase()
     const f = raw.filter(n => !q || n.name.toLowerCase().includes(q) || n.image.toLowerCase().includes(q))
