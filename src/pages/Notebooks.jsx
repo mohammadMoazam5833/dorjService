@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import { useApi, apiSend, invalidate } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
@@ -52,6 +52,15 @@ export default function Notebooks() {
   const [page, setPage] = useState(0)
 
   const raw = Array.isArray(data) ? data : []
+  // the drawer follows the live row, not the snapshot taken when it was opened
+  const detailsNb = details ? raw.find(n => n.name === details.name) || details : null
+  // poll while any notebook is between states, so status/actions never go stale
+  const transitionalCount = raw.filter(n => ['Pending', 'Stopping', 'Terminating'].includes(n.status)).length
+  useEffect(() => {
+    if (!transitionalCount) return
+    const t = setInterval(() => { invalidate('/api/notebooks'); reload() }, 5000)
+    return () => clearInterval(t)
+  }, [transitionalCount, reload])
   const list = useMemo(() => {
     const q = query.trim().toLowerCase()
     const f = raw.filter(n => !q || n.name.toLowerCase().includes(q) || n.image.toLowerCase().includes(q))
@@ -169,7 +178,7 @@ export default function Notebooks() {
 
       {create && <CreateNotebook opts={opts} onClose={() => setCreate(false)} onCreated={() => { setCreate(false); refresh() }} />}
       {resize && <ResizeNotebook nb={resize} opts={opts} onClose={() => setResize(null)} onDone={() => { setResize(null); refresh() }} />}
-      {details && <NotebookDetails nb={details} onClose={() => setDetails(null)} />}
+      {detailsNb && <NotebookDetails nb={detailsNb} onClose={() => setDetails(null)} />}
       {del && (
         <ConfirmDialog danger title={`حذف نوت‌بوک «${del.name}»؟`} typeToConfirm={del.name} busy={busy === del.name}
           body="این کار برگشت‌پذیر نیست. نوت‌بوک و Pod آن حذف می‌شود؛ فضای ذخیره‌سازی workspace باقی می‌ماند و در «فضاهای ذخیره‌سازی» قابل مدیریت است."

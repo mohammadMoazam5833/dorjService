@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import AppShell from '../components/AppShell.jsx'
-import { useApi, apiPost } from '../lib/api.js'
+import { useApi, apiPost, apiSend } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
 import { adaptVolumes, adaptVms } from '../lib/adapters/workloads.js'
 import { soonProps, SOON } from '../lib/soon.js'
 import ErrorNote from '../components/ErrorNote.jsx'
+import { DeleteVolume, AutoresizeVolume } from './volumes/VolumeDialogs.jsx'
+import { openInApp } from './Embed.jsx'
+import { relativeUrl } from '../lib/adapters/workloads.js'
+import { notifySuccess, notifyError } from '../lib/notify.js'
+import { invalidate } from '../lib/api.js'
 import './Volumes.css'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -43,7 +48,7 @@ function UsageBar({ used, total }) {
 }
 
 // ── row ⋯ menu ───────────────────────────────────────────────────────────────
-function RowMenu({ volume, onBrowse, onDelete }) {
+function RowMenu({ volume, onBrowse, onAutoresize, onCloseViewer, onDelete }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -64,20 +69,25 @@ function RowMenu({ volume, onBrowse, onDelete }) {
       {open && (
         <div className="vl-menu-drop">
           <div
-            className={`vl-menu-item ${!volume.viewer_url ? 'disabled' : ''}`}
-            onClick={() => volume.viewer_url && act(onBrowse)}
-            title={!volume.viewer_url ? 'فایل‌ها در دسترس نیستند — فضای ذخیره‌سازی mount نشده' : undefined}
+            className={`vl-menu-item ${volume.status !== 'Bound' ? 'disabled' : ''}`}
+            onClick={() => volume.status === 'Bound' && act(onBrowse)}
           >
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
             مرور فایل‌ها
           </div>
-          <div className="vl-menu-item disabled" title={SOON} aria-disabled="true">
+          {volume.has_viewer && (
+            <div className="vl-menu-item" onClick={() => act(onCloseViewer)}>
+              <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+              بستن مرورگر فایل
+            </div>
+          )}
+          <div className={`vl-menu-item ${volume.shared ? 'disabled' : ''}`} onClick={() => !volume.shared && act(onAutoresize)}>
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M13 2.05V4.07C16.94 4.54 20 7.92 20 12s-3.06 7.46-7 7.93v2.02c4.95-.49 9-4.76 9-9.95s-4.05-9.46-9-9.95zM11 2.05C6.05 2.54 2 6.81 2 12s4.05 9.46 9 9.95v-2.02C7.06 19.46 4 16.08 4 12s3.06-7.46 7-7.93V2.05zM12 7l-4 4h3v4h2v-4h3l-4-4z" /></svg>
-            تغییر اندازه <span className="vl-soon">{SOON}</span>
+            افزایش خودکار حجم
           </div>
-          <div className="vl-menu-item danger disabled" title={SOON} aria-disabled="true">
+          <div className={`vl-menu-item danger ${volume.shared ? 'disabled' : ''}`} onClick={() => !volume.shared && act(onDelete)}>
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
-            حذف <span className="vl-soon">{SOON}</span>
+            حذف
           </div>
         </div>
       )}
@@ -161,7 +171,11 @@ function sortRows(rows, key, dir) {
 
 // ── volumes page ──────────────────────────────────────────────────────────────
 export default function Volumes() {
-  const { data, loading, error } = useApi('/api/volumes', null, [], adaptVolumes)
+  const { data, loading, error, reload } = useApi('/api/volumes', null, [], adaptVolumes)
+  const [delVol, setDelVol] = useState(null)
+  const [arVol, setArVol] = useState(null)
+  const [createErr, setCreateErr] = useState('')
+  const refresh = () => { invalidate('/api/volumes'); invalidate('/api/resource-usage'); reload() }
   const { data: q, error: qErr } = useApi('/api/volumes/quota')
   const [open, setOpen]   = useState(false)
   const [name, setName]   = useState('')
@@ -197,22 +211,30 @@ export default function Volumes() {
     onClick: () => toggleSort(key),
   })
 
-  const browse = v => {
-    if (v.viewer_url) window.open(v.viewer_url, '_blank', 'noopener')
-    else setToast({ msg: `مرور فایل‌ها برای «${v.name}» در دسترس نیست — فضای ذخیره‌سازی mount نشده است.` })
+  // POST .../viewer starts (or reuses) the PVCViewer; it then opens inside the app shell.
+  const browse = async v => {
+    if (v.viewer_url) { openInApp(v.viewer_url, v.name); return }
+    const r = await apiPost(`/api/volumes/${encodeURIComponent(v.name)}/viewer`, {})
+    if (r.error) { notifyError(r.error.message); return }
+    refresh()
+    openInApp(relativeUrl(r.data?.viewer_url), v.name)
   }
 
-  const handleDelete = v => {
-    setToast({ msg: `فضای ذخیره‌سازی «${v.name}» حذف شد.` })
+  const closeViewer = async v => {
+    const r = await apiSend(`/api/volumes/${encodeURIComponent(v.name)}/viewer`, 'DELETE')
+    if (r.error) { notifyError(r.error.message); return }
+    notifySuccess(`مرورگر فایل «${v.name}» بسته شد`)
+    refresh()
   }
 
   const create = async () => {
-    setSaving(true)
-    await apiPost('/api/volumes', { name, size_gib: Number(size) })
+    setSaving(true); setCreateErr('')
+    const r = await apiPost('/api/volumes', { name: name.trim(), size: `${Number(size)}Gi` })
     setSaving(false)
-    setOpen(false)
-    setToast({ msg: `فضای ذخیره‌سازی «${name}» ایجاد شد.` })
-    setTimeout(() => window.location.reload(), 200)
+    if (r.error) { setCreateErr(r.error.message); notifyError(r.error.message); return }
+    setOpen(false); setName('')
+    notifySuccess(`فضای ذخیره‌سازی «${name.trim()}» ایجاد شد`)
+    refresh()
   }
 
   const storageRem = q?.quota?.storage_remaining_gib ?? null
@@ -232,7 +254,7 @@ export default function Volumes() {
         <div className="vl-title-row">
           <h1>فضاهای ذخیره‌سازی</h1>
           <div className="spacer" />
-          <button className="vl-new-btn" {...soonProps}>
+          <button className="vl-new-btn" onClick={() => setOpen(true)}>
             <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
             ایجاد فضای ذخیره‌سازی
           </button>
@@ -289,7 +311,7 @@ export default function Volumes() {
             <div className="vl-empty-icon">💾</div>
             <h3>هنوز فضای ذخیره‌سازی ندارید</h3>
             <p>فضاهای ذخیره‌سازی برای ذخیره دائمی داده‌های نوت‌بوک‌ها استفاده می‌شوند.</p>
-            <button className="vl-new-btn" {...soonProps}>ایجاد اولین فضا</button>
+            <button className="vl-new-btn" onClick={() => setOpen(true)}>ایجاد اولین فضا</button>
           </div>
         )}
 
@@ -349,7 +371,9 @@ export default function Volumes() {
                         <RowMenu
                           volume={v}
                           onBrowse={() => browse(v)}
-                          onDelete={() => handleDelete(v)}
+                          onAutoresize={() => setArVol(v)}
+                          onCloseViewer={() => closeViewer(v)}
+                          onDelete={() => setDelVol(v)}
                         />
                       </td>
                     </tr>
@@ -392,6 +416,7 @@ export default function Volumes() {
               </div>
             </div>
 
+            {createErr && <div className="nb-form-err" role="alert" dir="auto">{createErr}</div>}
             <div className="vl-modal-actions">
               <button className="vl-btn-cancel" onClick={() => setOpen(false)}>انصراف</button>
               <button className="vl-btn-create" onClick={create} disabled={saving || !name.trim() || Number(size) <= 0}>
@@ -403,6 +428,8 @@ export default function Volumes() {
       )}
 
       {toast && <Toast msg={toast.msg} onClose={() => setToast(null)} />}
+      {delVol && <DeleteVolume vol={delVol} onClose={() => setDelVol(null)} onDone={() => { setDelVol(null); refresh() }} />}
+      {arVol && <AutoresizeVolume vol={arVol} onClose={() => setArVol(null)} onDone={() => { setArVol(null); refresh() }} />}
     </AppShell>
   )
 }
