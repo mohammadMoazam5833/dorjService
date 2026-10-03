@@ -1,26 +1,23 @@
 import { useState } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import { useApi } from '../lib/api.js'
+import { adaptUsageHistory } from '../lib/adapters/metrics.js'
+import ErrorNote from '../components/ErrorNote.jsx'
 import Section from '../components/Section.jsx'
 import Card, { Hint } from '../components/Card.jsx'
 import Table, { Cell } from '../components/Table.jsx'
 import Chart from '../components/Chart.jsx'
 import { Chip, ChipRow } from '../components/Chip.jsx'
 
-// time range definitions: label, point count from end of 36-point history
-const RANGES = [
-  { label: '۶ ساعت اخیر', pts: 6,  xStep: 1,  xUnit: 'h', xCount: 6  },
-  { label: '۲۴ ساعت',     pts: 24, xStep: 4,  xUnit: 'h', xCount: 24 },
-  { label: '۷ روز',       pts: 36, xStep: 6,  xUnit: 'd', xCount: 7  },
-  { label: '۳۰ روز',      pts: 36, xStep: 6,  xUnit: 'd', xCount: 30 },
-]
+// /api/dashboard-usage-history covers the last 6 h at a 5-minute step (HISTORY_WINDOW_SECONDS);
+// longer ranges do not exist server-side, so only this one is offered.
+const RANGES = [{ label: '۶ ساعت اخیر', hours: 6 }]
 
-function makeXLabels(pts, rangeIdx) {
-  const r = RANGES[rangeIdx]
-  return Array.from({ length: pts }, (_, i) => {
-    if (r.xUnit === 'h') return `${pts - i}h`
-    const day = Math.round(((pts - 1 - i) / (pts - 1)) * r.xCount)
-    return day === 0 ? 'امروز' : `${day}d`
+function makeXLabels(n) {
+  return Array.from({ length: n }, (_, i) => {
+    const minsAgo = Math.round(((n - 1 - i) / Math.max(1, n - 1)) * 360)
+    const h = Math.round(minsAgo / 60)
+    return h === 0 ? 'اکنون' : `${h}h`
   })
 }
 
@@ -44,23 +41,20 @@ function StatCard({ label, val, sub, pct, unit }) {
 }
 
 export default function Usage() {
-  const { data: u } = useApi('/api/resource-usage')
-  const { data: hist } = useApi('/api/dashboard-usage-history')
+  const { data: u, error } = useApi('/api/resource-usage')
+  const { data: hist } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
   const [rangeIdx, setRangeIdx] = useState(0)
 
-  const r = RANGES[rangeIdx]
-  const slice = arr => (Array.isArray(arr) && arr.length > 0)
-    ? arr.slice(Math.max(0, arr.length - r.pts))
-    : []
+  const slice = arr => (Array.isArray(arr) ? arr : [])
 
   const cpuData  = slice(hist?.cpu_cores)
   const memData  = slice(hist?.memory_gib)
   const diskData = slice(hist?.storage_gib)
-  const xLabels  = makeXLabels(Math.max(cpuData.length, 1), rangeIdx)
+  const xLabels  = makeXLabels(Math.max(cpuData.length, 1))
 
-  const cpuPct  = u ? (u.cpu.used_cores / u.cpu.requested_cores) * 100 : 0
-  const memPct  = u ? (u.memory.used_gib / u.memory.requested_gib) * 100 : 0
-  const diskPct = u ? (u.storage.used_gib / u.storage.capacity_gib) * 100 : 0
+  const cpuPct  = u?.cpu?.pct ?? null
+  const memPct  = u?.memory?.pct ?? null
+  const diskPct = u?.storage?.pct ?? null
 
   return (
     <AppShell active="مصرف">
@@ -75,6 +69,7 @@ export default function Usage() {
           ))}
         </ChipRow>
       </div>
+      <ErrorNote error={error} />
 
       <div className="page-body">
         {/* stat cards */}

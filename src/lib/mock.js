@@ -7,6 +7,8 @@ const iso = daysAgo => new Date(now - daysAgo * 864e5).toISOString()
 const wave = (n, base, amp, seed = 1) =>
   Array.from({ length: n }, (_, i) => +(base + amp * (0.5 + 0.5 * Math.sin(i / 2.2 + seed)) + (i % 3) * 0.15 * amp).toFixed(2))
 
+const points = vals => vals.map((v, i) => [Math.floor(now / 1000) - (vals.length - 1 - i) * 300, v])
+
 const DB = {
   '/api/branding': { platform_name: 'دُرج', primary_color: '#12dec6' },
 
@@ -17,10 +19,19 @@ const DB = {
     cluster: { cpu_pct: 34.2, memory_pct: 58.7, storage_pct: 41.3 },
   },
 
+  // real shape: Prometheus range points [[unixTs, value|null], ...] over 6 h at a 5 m step
   '/api/dashboard-usage-history': {
-    cpu_cores: wave(36, 2.1, 3.4, 1),
-    memory_gib: wave(36, 9, 12, 2),
-    storage_gib: wave(36, 4.2, 1.8, 3),
+    namespace: 'demo', step_seconds: 300,
+    cpu_cores: points(wave(72, 2.1, 3.4, 1)),
+    memory_gib: points(wave(72, 9, 12, 2)),
+    storage_gib: points(wave(72, 4.2, 1.8, 3)),
+    gpu_util_pct: points(wave(72, 30, 40, 4)),
+  },
+
+  '/api/dashboard-cost': {
+    namespace: 'demo', rate_source: 'mock',
+    daily: Array.from({ length: 30 }, (_, i) => ({ date: new Date(now - (29 - i) * 864e5).toISOString().slice(0, 10), usd: 3 + (i % 5), irr: (3 + (i % 5)) * 1_050_000 })),
+    by_pod: [{ pod: 'vision-train-0', usd: 61, irr: 64_050_000 }, { pod: 'nlp-finetune-0', usd: 35, irr: 36_750_000 }],
   },
 
   '/api/resource-usage': {

@@ -20,7 +20,7 @@ export default function ResourcesWidget() {
   const { data: q } = useApi('/api/notebooks/options')
 
   const pct = v => `${Number(v ?? 0).toFixed(1)}%`
-  const cost = ru?.cost?.irr ?? 0
+  const cost = ru?.cost?.irr ?? null
   const qq = q?.quota || {}
 
   const cpuPct = ru?.cpu?.pct ?? 0
@@ -70,19 +70,19 @@ export default function ResourcesWidget() {
 
           <div className="rw-cost-row">
             <span className="rw-cost-label">هزینه جاری</span>
-            <span className="rw-cost-val gold"><bdi>{Number(cost).toLocaleString('en-US')}</bdi> ریال</span>
+            <span className="rw-cost-val gold"><bdi>{cost == null ? '—' : Number(cost).toLocaleString('en-US')}</bdi> ریال</span>
           </div>
 
           <div className="rw-divider" />
           <div className="rw-quota-head">سهمیه باقی‌مانده namespace</div>
           {[
-            ['CPU', `${qq.cpu_remaining_cores ?? 5} / ${ru?.cpu?.requested_cores ?? 8} هسته`],
-            ['RAM', `${qq.memory_remaining_gib ?? 13} / ${ru?.memory?.requested_gib ?? 32} GiB`],
-            ['ذخیره‌سازی', `${qq.storage_remaining_gib ?? 6} / ${ru?.storage?.capacity_gib ?? 10} GiB`],
-          ].map(([l, v]) => (
+            ['CPU', qq.cpu_remaining_cores, ru?.cpu?.requested_cores, 'هسته'],
+            ['RAM', qq.memory_remaining_gib, ru?.memory?.requested_gib, 'GiB'],
+            ['ذخیره‌سازی', qq.storage_remaining_gib, ru?.storage?.capacity_gib, 'GiB'],
+          ].map(([l, rem, total, unit]) => (
             <div key={l} className="rw-quota-row">
               <span className="rw-quota-label">{l}</span>
-              <span className="rw-quota-val">{v}</span>
+              <span className="rw-quota-val">{rem ?? '—'} / {total ?? '—'} {unit}</span>
             </div>
           ))}
         </div>

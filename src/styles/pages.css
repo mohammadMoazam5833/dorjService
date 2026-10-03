@@ -186,3 +186,7 @@ select.nb-field, select.vw-field { height: 40px; }
 
 /* Phase 1: actions not wired yet (soonProps) */
 button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.dash-recent { list-style: none; margin: 0; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+.dash-recent li { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.dash-recent a { color: #0c1a33; text-decoration: none; font-weight: 600; }
+.dash-recent a:hover { color: #0d9488; }
