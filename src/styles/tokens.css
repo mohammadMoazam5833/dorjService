@@ -1,5 +1,4 @@
-/* ── Google Fonts: Inter for Latin numerals and technical text ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+/* Inter is used when installed locally; no external font fetch (air-gapped cluster, see scripts/check-dist.mjs) */
 
 @font-face { font-family: 'Vazirmatn'; src: url('/fonts/vazirmatn-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: block; }
 @font-face { font-family: 'Vazirmatn'; src: url('/fonts/vazirmatn-600.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: block; }
