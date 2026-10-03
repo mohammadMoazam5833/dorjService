@@ -1,6 +1,6 @@
 # goodarzi.isigpu.local — Phase 1 design
 
-Date: 2026-10-03 · Status: approved in chat, awaiting written-spec review
+Date: 2026-10-03 · Status: approved (rev 2: SSO absolute-redirect decision, namespace + change-password findings)
 
 ## 1. Goal
 
@@ -85,15 +85,43 @@ hand-built auth replica drifting from the real one. Rejected alternatives:
 - (C) The pod's own nginx proxying `/api`. The HTML would be served
   unauthenticated, and there would be a second auth path.
 
-### Prerequisite to verify first (plan task 0)
+### SSO on a second host (decided 2026-10-03, revision 2)
 
-Before any frontend wiring, confirm that oauth2-proxy and Dex complete a
-login on the new host. oauth2-proxy uses `relative_redirect_url = true`
-and sets no cookie domain, so the cookie is per-host. The Dex static client
-used by oauth2-proxy needs `https://goodarzi.isigpu.local/oauth2/callback`
-added to its `redirectURIs`. That change only adds an entry. If login
-cannot be made to work on the new host without changing platform's auth
-behaviour, stop and return to the user.
+The finding came from reading the live config while writing the plan. Today:
+
+- oauth2-proxy runs with `redirect_url = "/oauth2/callback"` and
+  `relative_redirect_url = true`.
+- The Dex client has `redirectURIs: ['/oauth2/callback']`.
+- The Dex Keycloak connector calls back to the absolute
+  `https://platform.isigpu.local/dex/callback`.
+
+Dex finishes the flow on platform.isigpu.local, and its relative redirect
+lands the browser on `platform.isigpu.local/oauth2/callback`. The CSRF
+cookie was set on goodarzi.isigpu.local, so the login fails there. **The
+spec's "stop and ask" gate fired. The user chose option "absolute
+redirect"**:
+
+1. In the shared oauth2-proxy, set `relative_redirect_url = false` and
+   `cookie_secure = true` (ConfigMap param `FORCE_HTTPS=true`). oauth2-proxy
+   v7.13 then builds `https://<request host>/oauth2/callback` per request.
+   It forces `https` because Istio's ext-authz check request carries no
+   `X-Forwarded-Proto`.
+2. The Dex client `redirectURIs` becomes
+   `['/oauth2/callback', 'https://platform.isigpu.local/oauth2/callback',
+   'https://goodarzi.isigpu.local/oauth2/callback']`. The old entry stays,
+   so logins that are mid-flight during the switch still finish.
+3. Before touching the live objects, prove the change on a **canary
+   oauth2-proxy** (same image, the new config, not wired into Istio). For
+   both hosts, `/oauth2/start` must 302 to `/dex/auth?…redirect_uri=https%3A%2F%2F<host>%2Foauth2%2Fcallback`.
+4. Live switch: a timestamped backup of both ConfigMaps, then apply and
+   restart Dex and oauth2-proxy. Immediately verify platform.isigpu.local
+   with a real login, plus a `/dex/auth` probe for each host that must
+   return 302 to Keycloak and not `400 Unregistered redirect_uri`.
+   Rollback restores the two backups and restarts both deployments.
+
+Accepted side effect: every oauth2-proxy cookie is `Secure`.
+platform.isigpu.local is HTTPS-only (force-ssl-redirect), so nothing is
+expected to change for its users. That expectation is verified in step 4.
 
 ## 4. Frontend changes
 
@@ -119,24 +147,40 @@ behaviour, stop and return to the user.
   unit tests.
 
 ### 4.3 Identity, namespace, session
-- Current user and namespaces come from `/api/workgroup/env-info`
-  (centraldashboard). The namespace selector lists that user's namespaces.
-  The selected namespace is stored per viewer in `localStorage` (try/catch)
-  and passed as `?ns=` where the backend accepts it.
+- Session data comes from three sources:
+  - The current user's email comes from `/api/change-password/whoami`
+    (`{email, displayName}`).
+  - The namespace is the `namespace` field of `/api/resource-usage`.
+  - Every `kubeflow-resource-usage` endpoint resolves the namespace on the
+    server from the Profile the user owns (`resolve_namespace()`), and none
+    accepts `?ns=`.
+
+  So the namespace selector shows that single namespace read-only, with
+  no dropdown, and the hard-coded `godarzi` and `/api/workgroup/*` calls are
+  removed. A real multi-namespace switch would first need backend support,
+  which is out of Phase 1 scope.
 - Admin visibility: the "پنل مدیریت" menu item and `#/admin-panel` render
   only if `/api/admin/whoami` reports admin. Otherwise the route shows a
   403 message.
-- Logout goes to `/oauth2/sign_out`, using the same redirect chain that
-  platform.isigpu.local uses today, so the Keycloak session also ends.
-- Change password posts to the real `/api/change-password`, with the
-  backend's validation errors shown inline.
+- Logout goes to `/oauth2/sign_out?rd=%2F`, which is platform's existing
+  logout behaviour. It clears the oauth2-proxy session. Because of
+  `prompt=none`, the Keycloak SSO session itself survives, exactly as it
+  does on platform today.
+- Change password posts `{currentPassword, newPassword}` to the real
+  `/api/change-password`. The current UI sends `{current, password}`,
+  which is wrong. The backend's `error` message is shown inline, and
+  the dialog closes only on `{status:"ok"}`.
+- Absolute URLs from the backend (`notebook.url`, `volume.viewer_url`,
+  built from `KUBEFLOW_HOSTNAME=platform.isigpu.local`) are rewritten to
+  host-relative paths, so the user stays on goodarzi. The routes are
+  host `*`.
 - The `#/login` page and its route are removed, because Keycloak owns login.
 
 ### 4.4 Pages — Phase 1 data wiring
 
 | Page | Endpoints (GET unless noted) |
 |---|---|
-| Header / shell | `/api/branding`, `/api/resource-usage`, env-info, whoami |
+| Header / shell | `/api/branding`, `/api/resource-usage`, `/api/notebooks/options`, `/api/change-password/whoami`, `/admin-panel/api/admin/whoami` |
 | Dashboard | `/api/dashboard-summary`, `/api/dashboard-usage-history`, `/api/dashboard-cost`, `/api/notebooks` (recent) |
 | Notebooks | `/api/notebooks`, `/api/notebooks/options` |
 | Volumes | `/api/volumes`, `/api/volumes/quota`, `/api/backups`, `/api/restores` |
@@ -175,7 +219,9 @@ It is idempotent and has `--rollback`.
 4. Ingress `istio-system/goodarzi` on host `goodarzi.isigpu.local` →
    `istio-ingressgateway:80`, with TLS by cert-manager `isigpu-ca-issuer`
    and the same timeouts and force-ssl as the `kubeflow` ingress.
-5. Add the Dex redirect URI (§3).
+5. SSO change (§3 "SSO on a second host") is its own script with
+   canary, backup, apply and `--rollback`. It runs before the goodarzi
+   ingress goes live.
 6. DNS: add `goodarzi.isigpu.local → 172.16.50.202` wherever the other
    `*.isigpu.local` names are defined (find the mechanism in the plan;
    do not guess).
@@ -217,7 +263,7 @@ the base image needs the VPN tunnel, use it the way the other app builds do.
 
 | Risk | Mitigation |
 |---|---|
-| Dex/oauth2-proxy won't accept the new host | Task 0 proves login first; stop and ask if it needs auth-behaviour changes |
+| Shared-SSO change breaks platform login | Canary first; backup + one-command rollback; real platform login verified right after the switch |
 | Istio VS ordering differs from expectation | Verify with `istioctl proxy-config routes` on the gateway before enabling DNS; check that platform routes are unchanged |
 | Real response shapes differ from the mock | Adapters plus unit fixtures taken from backend source; e2e catches the rest |
 | Features in UI with no backend | Hidden or "به‌زودی", per §4.4 rules |
