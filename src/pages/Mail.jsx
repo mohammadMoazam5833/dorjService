@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import Icon from '../components/Icon.jsx'
 import { useApi, apiPost, invalidate } from '../lib/api.js'
@@ -49,10 +49,16 @@ export default function Mail() {
   const [folder, setFolder] = useState('INBOX')
   const [ver, setVer] = useState(0)
   const [query, setQuery] = useState('')
+  const [search, setSearch] = useState('')
+  // each search makes the backend scan up to 800 envelopes via doveadm, so wait for a pause in typing
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(query.trim()), 400)
+    return () => clearTimeout(t)
+  }, [query])
   const [page, setPage] = useState(0)
   const [msg, setMsg] = useState(null)
   const { data: fd, error: fdErr } = useApi('/api/mail/folders', null, [ver])
-  const { data: md, error: mdErr } = useApi(mailListPath(folder, page, query.trim()), null, [ver], adaptMailPage)
+  const { data: md, error: mdErr } = useApi(mailListPath(folder, page, search), null, [ver], adaptMailPage)
   const folders = fd?.folders || []
   const msgs = md?.messages || []
   const pages = md?.totalPages || 1
