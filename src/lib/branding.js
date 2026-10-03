@@ -12,6 +12,11 @@ export function useBranding() {
       if (cached.primary_color) {
         document.documentElement.style.setProperty('--nav-active', cached.primary_color)
       }
+      if (cached.display_name) document.title = cached.display_name
+      if (cached.favicon_data_uri) {
+        const link = document.querySelector('link[rel="icon"]')
+        if (link) link.href = cached.favicon_data_uri
+      }
       subs.forEach(f => f(cached))
     }).catch(() => {})
   }, [])

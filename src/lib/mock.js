@@ -10,7 +10,9 @@ const wave = (n, base, amp, seed = 1) =>
 const points = vals => vals.map((v, i) => [Math.floor(now / 1000) - (vals.length - 1 - i) * 300, v])
 
 const DB = {
-  '/api/branding': { platform_name: 'دُرج', primary_color: '#12dec6' },
+  '/api/branding': { display_name: 'دُرج', primary_color: '#12dec6', favicon_data_uri: '', logo_data_uri: '' },
+  '/api/change-password/whoami': { email: 'demo.user@isigpu.local', displayName: 'demo.user@isigpu.local' },
+  '/admin-panel/api/admin/whoami': { email: 'demo.user@isigpu.local', role: 'platform-admin' },
 
   '/api/dashboard-summary': {
     active_notebooks: 3,
@@ -35,6 +37,7 @@ const DB = {
   },
 
   '/api/resource-usage': {
+    namespace: 'demo',
     cpu: { used_cores: 2.7, requested_cores: 8, pct: 34.2 },
     memory: { used_gib: 18.8, requested_gib: 32, pct: 58.7 },
     storage: { used_gib: 4.1, capacity_gib: 10, pct: 41.3 },
@@ -85,7 +88,6 @@ const DB = {
     { name: 'datasets-weekly',       created_at: iso(7), phase: 'Completed', size_gib: 33 },
   ],
 
-  '/api/workgroup/get-all-namespaces': [['godarzi'], ['team-vision'], ['nlp-lab'], ['research'], ['sandbox']],
 
   '/admin-panel/api/admin/users': [
     { username: 'godarzi', email: 'godarzi@isigpu.local', enabled: true, is_platform_admin: true, federated: false },

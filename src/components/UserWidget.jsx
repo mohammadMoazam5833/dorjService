@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import Icon from './Icon.jsx'
-import { useApi, apiPost } from '../lib/api.js'
+import { useApi } from '../lib/api.js'
 import { usePrefs } from '../lib/prefs.jsx'
+import { useSession, initialsOf, changePassword, LOGOUT_URL } from '../lib/session.js'
+import { adaptBackups } from '../lib/adapters/workloads.js'
 import './UserWidget.css'
 
-const USERNAME = 'godarzi'
-const EMAIL = 'godarzi@isigpu.local'
-const INITIALS = 'گد'
 
 export default function UserWidget() {
   const [open, setOpen] = useState(false)
@@ -16,7 +15,12 @@ export default function UserWidget() {
   const [n1, setN1] = useState('')
   const [n2, setN2] = useState('')
   const ref = useRef(null)
-  const { data: backups } = useApi('/api/backups', [])
+  const { email, isAdmin } = useSession()
+  const username = email ? email.split('@')[0] : '—'
+  const initials = initialsOf(email)
+  const [pwErr, setPwErr] = useState('')
+  const [pwBusy, setPwBusy] = useState(false)
+  const { data: backups } = useApi('/api/backups', [], [], adaptBackups)
   const list = Array.isArray(backups) ? backups : []
 
   useEffect(() => {
@@ -27,9 +31,12 @@ export default function UserWidget() {
   }, [open])
 
   const { prefs, update: updatePrefs } = usePrefs() || {}
-  const logout = () => { window.location.hash = '#/login' }
+  const logout = () => { window.location.href = LOGOUT_URL }
   const savePw = async () => {
-    await apiPost('/api/change-password', { current: cur, password: n1 })
+    setPwBusy(true); setPwErr('')
+    const r = await changePassword(cur, n1)
+    setPwBusy(false)
+    if (!r.ok) { setPwErr(r.message || 'تغییر گذرواژه ناموفق بود.'); return }
     setPw(false); setCur(''); setN1(''); setN2('')
   }
 
@@ -39,8 +46,8 @@ export default function UserWidget() {
     <>
       <div className="uw-root" ref={ref}>
         <button className="uw-trigger" type="button" onClick={() => setOpen(o => !o)}>
-          <span className="uw-avatar">{INITIALS}</span>
-          <span className="uw-name">{USERNAME}</span>
+          <span className="uw-avatar">{initials}</span>
+          <span className="uw-name">{username}</span>
           <span className={`uw-caret ${open ? 'open' : ''}`}>
             <Icon name="caret" size={16} color="#8fa3b8" />
           </span>
@@ -49,10 +56,10 @@ export default function UserWidget() {
         {open && (
           <div className="uw-menu">
             <div className="uw-menu-header">
-              <span className="uw-menu-avatar">{INITIALS}</span>
+              <span className="uw-menu-avatar">{initials}</span>
               <div className="uw-menu-info">
-                <span className="uw-menu-name">{USERNAME}</span>
-                <span className="uw-menu-email">{EMAIL}</span>
+                <span className="uw-menu-name">{username}</span>
+                <span className="uw-menu-email"><bdi dir="ltr">{email || '—'}</bdi></span>
               </div>
             </div>
             <div className="uw-divider" />
@@ -68,10 +75,12 @@ export default function UserWidget() {
               <Icon name="lock" size={15} color="#56657f" />
               <span>تغییر گذرواژه</span>
             </div>
-            <a className="uw-item" href="#/admin-panel" onClick={close}>
-              <Icon name="shield" size={15} color="#56657f" />
-              <span>پنل ادمین</span>
-            </a>
+            {isAdmin && (
+              <a className="uw-item" href="#/admin-panel" onClick={close}>
+                <Icon name="shield" size={15} color="#56657f" />
+                <span>پنل ادمین</span>
+              </a>
+            )}
             <div className="uw-divider" />
             <div className="uw-item" onClick={() => updatePrefs?.({ digits: prefs?.digits === 'persian' ? 'latin' : 'persian' })}>
               <Icon name="globe" size={15} color="#56657f" />
@@ -101,9 +110,10 @@ export default function UserWidget() {
             <input className="uw-field" type="password" dir="ltr" value={n1} onChange={e => setN1(e.target.value)} />
             <label className="uw-field-label">تکرار گذرواژه جدید</label>
             <input className="uw-field" type="password" dir="ltr" value={n2} onChange={e => setN2(e.target.value)} />
+            {pwErr && <p className="uw-error" role="alert" dir="auto">{pwErr}</p>}
             <div className="uw-modal-actions">
               <button className="uw-btn-sec" onClick={() => setPw(false)}>انصراف</button>
-              <button className="uw-btn-pri" onClick={savePw} disabled={!cur || !n1 || n1 !== n2}>ذخیره</button>
+              <button className="uw-btn-pri" onClick={savePw} disabled={pwBusy || !cur || !n1 || n1 !== n2}>ذخیره</button>
             </div>
           </div>
         </>

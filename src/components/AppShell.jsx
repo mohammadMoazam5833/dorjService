@@ -4,10 +4,15 @@ import ResourcesWidget from './ResourcesWidget.jsx'
 import UserWidget from './UserWidget.jsx'
 import SearchModal from './SearchModal.jsx'
 import Drawer from './Drawer.jsx'
+import ErrorNote from './ErrorNote.jsx'
+import { useSession } from '../lib/session.js'
+import { useBranding } from '../lib/branding.js'
 import './AppShell.css'
 
 export default function AppShell({ active, admin, children }) {
   const [search, setSearch] = useState(false)
+  const { error: sessionError } = useSession()
+  useBranding()
 
   useEffect(() => {
     const handler = e => {
@@ -37,7 +42,7 @@ export default function AppShell({ active, admin, children }) {
           <ResourcesWidget />
           <UserWidget />
         </header>
-        <main className="main">{children}</main>
+        <main className="main"><ErrorNote error={sessionError} />{children}</main>
       </div>
 
       {search && <SearchModal onClose={() => setSearch(false)} />}

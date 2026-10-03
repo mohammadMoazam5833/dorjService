@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AppShell from '../../components/AppShell.jsx'
 import Icon from '../../components/Icon.jsx'
+import { useSession } from '../../lib/session.js'
 import Profiles from './Profiles.jsx'
 import Users from './Users.jsx'
 import Gpu from './Gpu.jsx'
@@ -76,6 +77,19 @@ function labelOf(id) {
 export default function AdminPanel() {
   const [page, setPage] = useState('profiles')
   const [mini, setMini] = useState(false)
+  const { isAdmin, loading } = useSession()
+
+  if (!loading && !isAdmin) {
+    return (
+      <AppShell active="">
+        <div className="paper-card section" style={{ margin: 24, padding: 24 }}>
+          <h2>دسترسی ندارید</h2>
+          <p>پنل مدیریت فقط برای مدیران پلتفرم در دسترس است.</p>
+          <a href="#/">بازگشت به خانه</a>
+        </div>
+      </AppShell>
+    )
+  }
 
   return (
     <AppShell active="" admin>

@@ -3,7 +3,10 @@
  * the single gem kept in the casket that the name «دُرج» describes.
  * variant: 'light' → dark grounds (sidebar, login) · 'dark' → light grounds
  */
+import { useBranding } from '../lib/branding.js'
+
 export default function Logo({ variant = 'light', height = 40, showWord = true }) {
+  const { logo_data_uri: logoUri, display_name: brandName } = useBranding()
   const word = variant === 'dark' ? '#0B1B3A' : '#F3F6FC'
   const wordSub = variant === 'dark' ? '#8590a6' : 'rgba(210,220,240,.62)'
   const uid = variant + height
@@ -45,12 +48,15 @@ export default function Logo({ variant = 'light', height = 40, showWord = true }
     </svg>
   )
 
+  // admin-panel branding (/api/branding) overrides the bundled mark
+  if (logoUri) return <img src={logoUri} alt={brandName || 'logo'} style={{ height: m, width: 'auto', display: 'block' }} />
+
   if (!showWord) return Mark
 
   return (
     <span dir="rtl" style={{ display: 'inline-flex', alignItems: 'center', gap: m * 0.35, lineHeight: 1 }}>
       {Mark}
-      <span style={{ fontFamily: 'Vazirmatn, sans-serif', fontWeight: 700, fontSize: m * 0.6, color: word, lineHeight: 1 }}>دُرج</span>
+      <span style={{ fontFamily: 'Vazirmatn, sans-serif', fontWeight: 700, fontSize: m * 0.6, color: word, lineHeight: 1 }}>{brandName || 'دُرج'}</span>
     </span>
   )
 }

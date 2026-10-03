@@ -5,7 +5,6 @@ import Volumes, { Vms } from './pages/Volumes.jsx'
 import Mail from './pages/Mail.jsx'
 import Usage from './pages/Usage.jsx'
 import Help from './pages/Help.jsx'
-import Login from './pages/Login.jsx'
 import AdminPanel from './pages/admin/AdminPanel.jsx'
 
 function useHash() {
@@ -29,7 +28,6 @@ export default function App() {
     case 'usage': return <Usage />
     case 'help': return <Help />
     case 'admin-panel': return <AdminPanel />
-    case 'login': return <Login />
     default: return <Dashboard />
   }
 }
