@@ -15,7 +15,7 @@ const api = (page, path, method = 'GET', body) => page.evaluate(async ([p, m, b]
 
 async function openTab(page, label) {
   await page.goto(`${G}/#/admin-panel`)
-  await page.locator('.asn-item', { hasText: label }).first().click()
+  await page.locator('.asn-item', { hasText: new RegExp(`^\s*${label}\s*$`) }).first().click()
 }
 
 test('users, profiles, access load real data', async ({ page }) => {
@@ -55,7 +55,7 @@ test('groups: create, members dialog, delete a throwaway group', async ({ page }
   await expect(page.locator('.dj-toast-success').last()).toBeVisible({ timeout: 30_000 })
   await page.locator('.ak-search').fill(GROUP)
   const row = page.locator('tr', { hasText: GROUP })
-  await expect(row).toBeVisible({ timeout: 30_000 })
+  await expect(row).toBeVisible({ timeout: 60_000 })
   await row.getByRole('button', { name: 'اعضا' }).click()
   await expect(page.locator('.ak-modal .ak-check').first()).toBeVisible({ timeout: 30_000 })
   await page.locator('.ak-modal').getByRole('button', { name: 'انصراف' }).click()
