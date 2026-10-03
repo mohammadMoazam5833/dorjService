@@ -5,18 +5,21 @@ import Table, { Cell } from '../../components/Table.jsx'
 import Badge from '../../components/Badge.jsx'
 import { useApi } from '../../lib/api.js'
 import { faNum, usd, irr } from '../../lib/format.js'
+import ErrorNote from '../../components/ErrorNote.jsx'
+import { soonProps, SOON } from '../../lib/soon.js'
 
 const GPU_TABS = ['پاس‌تروی', 'مصرف (جدول)', 'مصرف (نمودار)', 'سرمایه']
 
 export default function Gpu() {
   const [sub, setSub] = useState(0)
-  const { data: pt } = useApi('/admin-panel/api/admin/gpu-passthrough')
+  const { data: pt, error } = useApi('/admin-panel/api/admin/gpu-passthrough')
   const gpus = pt?.gpus || []
   const cap = pt?.capacity_summary || []
   const totalVram = cap.reduce((a, c) => a + (c.total_vram_gib || 0), 0)
   const usedVram = cap.reduce((a, c) => a + ((c.total_vram_gib - c.free_vram_gib) || 0), 0)
   return (
     <>
+      <ErrorNote error={error} />
       <Tabs tabs={GPU_TABS} active={sub} onSelect={setSub} />
       {sub === 0 && (
         <Card title="مدیریت GPU">

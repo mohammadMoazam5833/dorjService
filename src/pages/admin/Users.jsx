@@ -4,13 +4,16 @@ import Search from '../../components/Search.jsx'
 import Button from '../../components/Button.jsx'
 import Badge from '../../components/Badge.jsx'
 import { useApi } from '../../lib/api.js'
+import ErrorNote from '../../components/ErrorNote.jsx'
+import { soonProps, SOON } from '../../lib/soon.js'
 
 export default function Users() {
-  const { data } = useApi('/admin-panel/api/admin/users', [])
+  const { data, error } = useApi('/admin-panel/api/admin/users', [])
   const list = Array.isArray(data) ? data : []
   return (
     <Card title="کاربران">
-      <div className="actions"><Button>+ ثبت‌نام کاربر جدید</Button></div>
+      <ErrorNote error={error} />
+      <div className="actions"><Button {...soonProps}>+ ثبت‌نام کاربر جدید</Button></div>
       <Search />
       <Table
         cols={[Cell('نام کاربری', 'r'), Cell('ایمیل', 'r'), Cell('وضعیت'), Cell('منبع'), Cell('عملیات')]}
@@ -26,8 +29,8 @@ export default function Users() {
           u.federated ? 'AD' : 'محلی',
           { jsx: (
             <div className="actions" style={{ justifyContent: 'center' }}>
-              <Button variant="ghost">بازنشانی رمز</Button>
-              <Button variant="ghost">{u.is_platform_admin ? 'حذف دسترسی ادمین' : 'اعطای دسترسی ادمین'}</Button>
+              <Button {...soonProps} variant="ghost">بازنشانی رمز</Button>
+              <Button {...soonProps} variant="ghost">{u.is_platform_admin ? 'حذف دسترسی ادمین' : 'اعطای دسترسی ادمین'}</Button>
             </div>
           ) },
         ])} />

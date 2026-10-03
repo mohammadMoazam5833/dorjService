@@ -4,6 +4,8 @@ import Button from '../../components/Button.jsx'
 import Badge from '../../components/Badge.jsx'
 import { useApi } from '../../lib/api.js'
 import { faNum } from '../../lib/format.js'
+import ErrorNote from '../../components/ErrorNote.jsx'
+import { soonProps, SOON } from '../../lib/soon.js'
 
 const MODEL_STATUS = {
   serving: 'در حال سرو', downloaded: 'دانلودشده', not_downloaded: 'دانلود نشده',
@@ -11,10 +13,11 @@ const MODEL_STATUS = {
 }
 
 export default function ModelsAdmin() {
-  const { data } = useApi('/admin-panel/api/admin/models', [])
+  const { data, error } = useApi('/admin-panel/api/admin/models', [])
   const list = Array.isArray(data) ? data : []
   return (
     <div className="model-cards">
+      <ErrorNote error={error} />
       {list.map(m => (
         <div key={m.id} className="model-card">
           <b style={{ fontSize: 15 }}>{m.display_name}</b>
@@ -22,7 +25,7 @@ export default function ModelsAdmin() {
           <div><Badge ok={m.status === 'serving'}>{MODEL_STATUS[m.status] || m.status}</Badge></div>
           <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{m.litellm_alias ? `نام مستعار: ${m.litellm_alias}` : '—'}</div>
           <div style={{ marginTop: 'auto', display: 'flex', gap: 8 }}>
-            <Button>استقرار</Button><Button variant="danger">حذف</Button>
+            <Button {...soonProps}>استقرار</Button><Button {...soonProps} variant="danger">حذف</Button>
           </div>
         </div>
       ))}

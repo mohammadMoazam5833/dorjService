@@ -4,15 +4,18 @@ import Button from '../../components/Button.jsx'
 import { Chip, ChipRow } from '../../components/Chip.jsx'
 import { useApi } from '../../lib/api.js'
 import { faNum } from '../../lib/format.js'
+import ErrorNote from '../../components/ErrorNote.jsx'
+import { soonProps, SOON } from '../../lib/soon.js'
 
 export default function Groups() {
-  const { data } = useApi('/admin-panel/api/admin/groups', [])
+  const { data, error } = useApi('/admin-panel/api/admin/groups', [])
   const list = Array.isArray(data) ? data : []
   return (
     <>
+      <ErrorNote error={error} />
       <Card title="ایجاد گروه جدید">
         <div className="field"><label>نام گروه</label><input className="ap-search" placeholder="gpu-team" readOnly /></div>
-        <div className="actions"><Button>ایجاد</Button></div>
+        <div className="actions"><Button {...soonProps}>ایجاد</Button></div>
       </Card>
       <Card title={`گروه‌ها (${faNum(list.length)} گروه)`}>
         {list.map(g => {

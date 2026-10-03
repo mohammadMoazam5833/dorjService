@@ -4,12 +4,14 @@ import Card, { Hint } from '../../components/Card.jsx'
 import Table, { Cell } from '../../components/Table.jsx'
 import Search from '../../components/Search.jsx'
 import Button from '../../components/Button.jsx'
-import { useApi, apiPost } from '../../lib/api.js'
+import { useApi } from '../../lib/api.js'
 import { quotaCell, gpuCell } from '../../lib/format.js'
+import ErrorNote from '../../components/ErrorNote.jsx'
+import { soonProps, SOON } from '../../lib/soon.js'
 
 export default function Profiles() {
   const [sub, setSub] = useState(0)
-  const { data } = useApi('/admin-panel/api/admin/profiles', [])
+  const { data, error } = useApi('/admin-panel/api/admin/profiles', [])
   const all = Array.isArray(data) ? data : []
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
@@ -33,21 +35,13 @@ export default function Profiles() {
     setSto(String(h['requests.storage'] ?? h.storage ?? ''))
     setTier(p.tier || '')
   }
-  const save = async () => {
-    setSaving(true)
-    await apiPost('/admin-panel/api/admin/profiles', { name: edit?.name, tier, quota: { cpu, memory: mem, storage: sto } })
-    setSaving(false)
-    setEdit(null)
-    setToast('تغییرات پروفایل «' + (edit?.name || '') + '» ذخیره شد.')
-    setTimeout(() => setToast(''), 3500)
-  }
-
   return (
     <>
       <Tabs tabs={[`پروفایل‌ها (${all.length})`, 'SLA', 'بازراه‌اندازی‌های SLA']} active={sub} onSelect={setSub} />
       {sub === 0 && (
         <Card>
           <h2>مدیریت پروفایل‌ها</h2>
+          <ErrorNote error={error} />
           <Search value={query} onChange={v => { setQuery(v); setPage(0) }} />
           <Table
             cols={[Cell('نام', 'r'), Cell('مالک', 'r'), Cell('CPU'), Cell('Memory'), Cell('فضای ذخیره‌سازی'), Cell('GPU'), Cell('سطح SLA'), Cell('ایجاد شده'), Cell('')]}
@@ -59,7 +53,7 @@ export default function Profiles() {
               gpuCell(p.resource_quota?.hard),
               p.tier || '-',
               (p.created_at || '-').slice(0, 10),
-              { jsx: <Button variant="ghost" onClick={() => openEdit(p)}>ویرایش</Button> },
+              { jsx: <Button variant="ghost" {...soonProps}>ویرایش</Button> },
             ])} />
           <div className="ap-pager">
             <button className="ap-btn ap-btn-ghost" onClick={() => setPage(p => Math.max(0, p - 1))} aria-label="صفحه قبل">‹</button>
@@ -88,7 +82,7 @@ export default function Profiles() {
             <input className="vw-field" value={tier} onChange={e => setTier(e.target.value)} />
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setEdit(null)}>انصراف</button>
-              <button className="btn-primary" onClick={save} disabled={saving}>ذخیره</button>
+              <button className="btn-primary" {...soonProps}>ذخیره</button>
             </div>
           </div>
         </>
@@ -98,11 +92,12 @@ export default function Profiles() {
 }
 
 export function SlaNodes() {
-  const { data } = useApi('/admin-panel/api/admin/sla-nodes', [])
+  const { data, error } = useApi('/admin-panel/api/admin/sla-nodes', [])
   const list = Array.isArray(data) ? data : []
   const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d])
   return (
     <Card title="نودهای SLA">
+      <ErrorNote error={error} />
       {list.map(n => (
         <div key={n.name} style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 14, display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{ flex: 1 }}>
@@ -117,5 +112,6 @@ export function SlaNodes() {
 }
 
 export function SlaRestarts() {
-  return <Card title="ری‌استارت‌های SLA (۷ روز آینده)"><Hint>هیچ ری‌استارت SLA در انتظاری وجود ندارد.</Hint></Card>
+  // /api/admin/sla-tier-schedule is wired in Phase 3; never claim "nothing pending" without data
+  return <Card title="ری‌استارت‌های SLA (۷ روز آینده)"><Hint>این بخش در فاز بعدی به سرویس واقعی متصل می‌شود — {SOON}.</Hint></Card>
 }
