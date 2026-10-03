@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import Icon from '../components/Icon.jsx'
-import { useApi, apiPost } from '../lib/api.js'
+import { useApi, apiPost, invalidate } from '../lib/api.js'
+import { mailListPath, adaptMailPage, messagePath, adaptMailBody } from '../lib/adapters/mail.js'
+import ErrorNote from '../components/ErrorNote.jsx'
 import './Mail.css'
 
 const FA_FOLDER = {
@@ -49,20 +51,19 @@ export default function Mail() {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
   const [msg, setMsg] = useState(null)
-  const { data: fd } = useApi('/api/mail/folders', null, [ver])
-  const { data: md } = useApi('/api/mail/messages?folder=' + folder, null, [folder, ver])
+  const { data: fd, error: fdErr } = useApi('/api/mail/folders', null, [ver])
+  const { data: md, error: mdErr } = useApi(mailListPath(folder, page, query.trim()), null, [ver], adaptMailPage)
   const folders = fd?.folders || []
-  const all = (md?.messages || []).filter(m => !query || (m.subject + m.from).toLowerCase().includes(query.toLowerCase()))
-  const per = 10
-  const pages = Math.max(1, Math.ceil(all.length / per))
-  const msgs = all.slice(page * per, page * per + per)
+  const msgs = md?.messages || []
+  const pages = md?.totalPages || 1
+  const { data: body, loading: bodyLoading } = useApi(msg ? messagePath(folder, msg.uid) : null, null, [], adaptMailBody)
   const unseenTotal = folders.reduce((a, f) => a + (f.unseen || 0), 0)
 
   const openMsg = async m => {
     setMsg(m)
     if (!m.seen) {
-      await apiPost('/api/mail/seen', { folder, uid: m.uid })
-      setVer(v => v + 1)
+      const r = await apiPost('/api/mail/seen', { folder, uid: m.uid })
+      if (!r.error) setVer(v => v + 1)
     }
   }
 
@@ -76,7 +77,7 @@ export default function Mail() {
           </div>
           <div className="ml-head-side">
             <span className="ml-readonly-badge"><Icon name="lock" size={13} color="#5f6368" /><span>فقط‌خواندنی</span></span>
-            <button className="ml-refresh" onClick={() => setVer(v => v + 1)}>
+            <button className="ml-refresh" onClick={() => { invalidate('/api/mail'); setVer(v => v + 1) }}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" /></svg>
               تازه‌سازی
             </button>
@@ -130,7 +131,8 @@ export default function Mail() {
               </div>
             </div>
 
-            {msgs.length === 0 ? (
+            <ErrorNote error={fdErr || mdErr} />
+            {mdErr ? null : msgs.length === 0 ? (
               <div className="ml-empty">
                 <div className="ml-empty-icon">📭</div>
                 <h3>{FA_FOLDER[folder] || folder} خالی است</h3>
@@ -173,7 +175,21 @@ export default function Mail() {
               <button className="ml-modal-close" onClick={() => setMsg(null)}>✕</button>
             </div>
             <div className="ml-modal-body">
-              {msg.body || 'متن این پیام در نمای فقط‌خواندنی در دسترس نیست.'}
+              {bodyLoading ? 'در حال بارگذاری…'
+                : body?.text ? <div style={{ whiteSpace: 'pre-wrap' }} dir="auto">{body.text}</div>
+                : body?.html ? <iframe title="mail" sandbox="" srcDoc={body.html} style={{ width: '100%', minHeight: 320, border: 0 }} />
+                : 'این پیام متنی ندارد.'}
+              {body?.attachments?.length > 0 && (
+                <ul className="ml-attachments">
+                  {body.attachments.map(a => (
+                    <li key={a.index}>
+                      <a href={`/api/mail/attachment?folder=${encodeURIComponent(folder)}&uid=${msg.uid}&index=${a.index}`}>
+                        <bdi dir="ltr">{a.filename}</bdi>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="ml-modal-foot">
               <button className="btn-secondary" onClick={() => setMsg(null)}>بستن</button>

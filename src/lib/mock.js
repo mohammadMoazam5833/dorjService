@@ -79,8 +79,8 @@ const DB = {
   ],
 
   '/api/mail/folders': {
-    address: 'godarzi@isigpu.local',
-    folders: [{ name: 'INBOX' }, { name: 'Sent' }, { name: 'Archive' }, { name: 'Trash' }],
+    address: 'demo.user@isigpu.local',
+    folders: [{ name: 'INBOX', total: 8, unseen: 2 }, { name: 'Sent', total: 3, unseen: 0 }, { name: 'Archive', total: 0, unseen: 0 }, { name: 'Trash', total: 0, unseen: 0 }],
   },
 
   '/api/backups': [
@@ -151,24 +151,26 @@ const SUBJECTS = [
   'تأیید ایجاد نوت‌بوک vision-train',
   'زمان‌بندی بازراه‌اندازی SLA',
 ]
-function mailMessages(folder) {
+// real shape: /api/mail/messages pages 30 per page; bodies come from /api/mail/message
+function mailMessages(folder, page) {
   const n = folder === 'Trash' ? 0 : folder === 'Sent' ? 3 : 8
-  return {
-    messages: Array.from({ length: n }, (_, i) => ({
-      uid: `${folder}-${i}`,
-      from: SENDERS[i % SENDERS.length],
-      subject: SUBJECTS[i % SUBJECTS.length],
-      date: new Date(now - i * 6.4e7).toLocaleDateString('fa-IR'),
-      seen: i > 1,
-      body: 'این یک پیام نمونه برای نمایش طراحی صفحه‌ی ایمیل است. محتوای واقعی از سرور IMAP بارگذاری می‌شود.',
-    })),
-  }
+  const all = Array.from({ length: n }, (_, i) => ({
+    uid: 100 - i,
+    seen: i > 1, answered: false, flagged: false,
+    from: `${SENDERS[i % SENDERS.length]} <noreply@isigpu.local>`,
+    subject: SUBJECTS[i % SUBJECTS.length],
+    date: new Date(now - i * 6.4e7).toUTCString(),
+  }))
+  return { address: 'demo.user@isigpu.local', folder, page, page_size: 30, total: n, total_pages: 1, capped: false, messages: all.slice((page - 1) * 30, page * 30) }
 }
 
 function resolve(path) {
-  if (path.startsWith('/api/mail/messages')) {
-    const folder = new URLSearchParams(path.split('?')[1] || '').get('folder') || 'INBOX'
-    return mailMessages(folder)
+  const qs = new URLSearchParams(path.split('?')[1] || '')
+  if (path.startsWith('/api/mail/messages')) return mailMessages(qs.get('folder') || 'INBOX', Number(qs.get('page') || 1))
+  if (path.startsWith('/api/mail/message?')) {
+    return { from: 'تیم پشتیبانی <noreply@isigpu.local>', to: 'demo.user@isigpu.local', cc: '', subject: 'نمونه', date: new Date(now).toUTCString(),
+      body_text: 'این یک پیام نمونه برای نمایش طراحی صفحه‌ی ایمیل است. محتوای واقعی از سرور IMAP بارگذاری می‌شود.', body_html: '',
+      attachments: [{ index: 0, filename: 'report.pdf', content_type: 'application/pdf', size: 20480 }] }
   }
   if (path in DB) return DB[path]
   return null
