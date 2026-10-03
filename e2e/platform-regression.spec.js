@@ -18,7 +18,10 @@ test('platform.isigpu.local: login, home and API still work', async ({ page }) =
 
 test('platform.isigpu.local: sign_out clears the session', async ({ page }) => {
   await login(page, PLATFORM, process.env.E2E_USER, process.env.E2E_PASS)
-  await page.goto(PLATFORM + '/oauth2/sign_out?rd=%2F')
+  // sign_out clears the oauth2-proxy session cookie; following rd=/ would silently log back in
+  // (prompt=none + live Keycloak SSO session), so only the cleared session is asserted.
+  const so = await page.request.get(PLATFORM + '/oauth2/sign_out?rd=%2F', { maxRedirects: 0 })
+  expect([302, 303]).toContain(so.status())
   const r = await page.request.get(PLATFORM + '/api/resource-usage', { maxRedirects: 0 })
   expect([401, 403]).toContain(r.status())
 })
