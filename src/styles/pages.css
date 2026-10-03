@@ -183,3 +183,6 @@ select.nb-field, select.vw-field { height: 40px; }
 .login-btn { height: 44px; background: var(--brand-grad); color: #fff; border-radius: 999px; font-size: 15px; font-weight: 700; border: 0; box-shadow: 0 10px 30px -12px rgba(37,99,235,.8); cursor: pointer; font-family: inherit; }
 .login-forgot { color: var(--brand-blue); font-size: 13px; }
 .login-trust { background: #f7f9fb; border-radius: var(--r-sm); padding: 10px 12px; font-size: 11px; color: var(--muted-2); display: flex; gap: 8px; align-items: center; }
+
+/* Phase 1: actions not wired yet (soonProps) */
+button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }

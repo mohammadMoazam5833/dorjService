@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import { useApi, apiPost } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
+import { adaptVolumes, adaptVms } from '../lib/adapters/workloads.js'
+import { soonProps, SOON } from '../lib/soon.js'
+import ErrorNote from '../components/ErrorNote.jsx'
 import './Volumes.css'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -68,13 +71,13 @@ function RowMenu({ volume, onBrowse, onDelete }) {
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
             مرور فایل‌ها
           </div>
-          <div className="vl-menu-item">
+          <div className="vl-menu-item disabled" title={SOON} aria-disabled="true">
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M13 2.05V4.07C16.94 4.54 20 7.92 20 12s-3.06 7.46-7 7.93v2.02c4.95-.49 9-4.76 9-9.95s-4.05-9.46-9-9.95zM11 2.05C6.05 2.54 2 6.81 2 12s4.05 9.46 9 9.95v-2.02C7.06 19.46 4 16.08 4 12s3.06-7.46 7-7.93V2.05zM12 7l-4 4h3v4h2v-4h3l-4-4z" /></svg>
-            تغییر اندازه
+            تغییر اندازه <span className="vl-soon">{SOON}</span>
           </div>
-          <div className="vl-menu-item danger" onClick={() => act(onDelete)}>
+          <div className="vl-menu-item danger disabled" title={SOON} aria-disabled="true">
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
-            حذف
+            حذف <span className="vl-soon">{SOON}</span>
           </div>
         </div>
       )}
@@ -158,8 +161,8 @@ function sortRows(rows, key, dir) {
 
 // ── volumes page ──────────────────────────────────────────────────────────────
 export default function Volumes() {
-  const { data, loading } = useApi('/api/volumes', null)
-  const { data: q }       = useApi('/api/volumes/quota')
+  const { data, loading, error } = useApi('/api/volumes', null, [], adaptVolumes)
+  const { data: q, error: qErr } = useApi('/api/volumes/quota')
   const [open, setOpen]   = useState(false)
   const [name, setName]   = useState('')
   const [size, setSize]   = useState('5')
@@ -195,7 +198,7 @@ export default function Volumes() {
   })
 
   const browse = v => {
-    if (v.viewer_url && v.viewer_url !== '#') window.open(v.viewer_url, '_blank')
+    if (v.viewer_url) window.open(v.viewer_url, '_blank', 'noopener')
     else setToast({ msg: `مرور فایل‌ها برای «${v.name}» در دسترس نیست — فضای ذخیره‌سازی mount نشده است.` })
   }
 
@@ -212,7 +215,7 @@ export default function Volumes() {
     setTimeout(() => window.location.reload(), 200)
   }
 
-  const storageRem = q?.quota?.storage_remaining_gib ?? 9
+  const storageRem = q?.quota?.storage_remaining_gib ?? null
   const showCol = k => visible.includes(k)
 
   const SortTh = ({ col, children }) => (
@@ -229,7 +232,7 @@ export default function Volumes() {
         <div className="vl-title-row">
           <h1>فضاهای ذخیره‌سازی</h1>
           <div className="spacer" />
-          <button className="vl-new-btn" onClick={() => setOpen(true)}>
+          <button className="vl-new-btn" {...soonProps}>
             <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
             ایجاد فضای ذخیره‌سازی
           </button>
@@ -267,6 +270,7 @@ export default function Volumes() {
         </div>
 
         {/* skeleton */}
+        <ErrorNote error={error || qErr} />
         {loading && (
           <div style={{ padding: '24px' }}>
             {[1,2,3].map(i => (
@@ -280,12 +284,12 @@ export default function Volumes() {
         )}
 
         {/* empty */}
-        {!loading && raw.length === 0 && (
+        {!loading && !error && raw.length === 0 && (
           <div className="vl-empty">
             <div className="vl-empty-icon">💾</div>
             <h3>هنوز فضای ذخیره‌سازی ندارید</h3>
             <p>فضاهای ذخیره‌سازی برای ذخیره دائمی داده‌های نوت‌بوک‌ها استفاده می‌شوند.</p>
-            <button className="vl-new-btn" onClick={() => setOpen(true)}>ایجاد اولین فضا</button>
+            <button className="vl-new-btn" {...soonProps}>ایجاد اولین فضا</button>
           </div>
         )}
 
@@ -379,7 +383,7 @@ export default function Volumes() {
             <input className="vl-finput" type="number" min="1" value={size} onChange={e => setSize(e.target.value)} />
             <div className="vl-quota-bar">
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#8fa3b8', marginBottom:4 }}>
-                <span>سهمیه باقی‌مانده</span><span>{storageRem} GiB</span>
+                <span>سهمیه باقی‌مانده</span><span>{storageRem ?? '—'} GiB</span>
               </div>
               <div style={{ height:4, background:'#e8edf3', borderRadius:999, overflow:'hidden' }}>
                 <div style={{ height:'100%', borderRadius:999, background:'#0d9488',
@@ -408,6 +412,12 @@ const VM_STATUS_MAP = {
   Running: { cls: 'bound',    label: 'در حال اجرا' },
   Stopped: { cls: 'released', label: 'متوقف' },
   Error:   { cls: 'failed',   label: 'خطا' },
+  Starting:   { cls: 'pending',  label: 'در حال راه‌اندازی' },
+  Stopping:   { cls: 'pending',  label: 'در حال توقف' },
+  Paused:     { cls: 'released', label: 'متوقف موقت' },
+  Migrating:  { cls: 'pending',  label: 'در حال انتقال' },
+  Provisioning: { cls: 'pending', label: 'در حال آماده‌سازی' },
+  Unknown:    { cls: 'released', label: 'نامشخص' },
 }
 
 function VmStatusBadge({ status }) {
@@ -433,17 +443,17 @@ function VmRowMenu({ vm }) {
       <button className={`vl-menu-btn ${open ? 'open' : ''}`} onClick={() => setOpen(o => !o)}>⋯</button>
       {open && (
         <div className="vl-menu-drop">
-          <div className="vl-menu-item">
+          <div className="vl-menu-item disabled" title={SOON} aria-disabled="true">
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor">
               {vm.status === 'Running'
                 ? <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                 : <path d="M8 5v14l11-7z" />}
             </svg>
-            {vm.status === 'Running' ? 'توقف' : 'راه‌اندازی'}
+            {vm.status === 'Running' ? 'توقف' : 'راه‌اندازی'} <span className="vl-soon">{SOON}</span>
           </div>
-          <div className="vl-menu-item danger">
+          <div className="vl-menu-item danger disabled" title={SOON} aria-disabled="true">
             <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
-            حذف
+            حذف <span className="vl-soon">{SOON}</span>
           </div>
         </div>
       )}
@@ -453,7 +463,7 @@ function VmRowMenu({ vm }) {
 
 export function Vms() {
   const { data: en }   = useApi('/api/vms/enabled')
-  const { data, loading } = useApi('/api/vms', null)
+  const { data, loading, error } = useApi('/api/vms', null, [], adaptVms)
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState('name')
   const [sortDir, setSortDir] = useState('asc')
@@ -493,6 +503,8 @@ export function Vms() {
             سرویس ماشین مجازی در حال حاضر در پلتفرم غیرفعال است.
           </div>
         )}
+
+        <ErrorNote error={error} />
 
         <div className="vl-toolbar">
           <div className="vl-search-wrap">

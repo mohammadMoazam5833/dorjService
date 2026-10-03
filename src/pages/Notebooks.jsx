@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import { useApi, apiPost } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
+import { adaptNotebooks } from '../lib/adapters/workloads.js'
+import { soonProps } from '../lib/soon.js'
+import ErrorNote from '../components/ErrorNote.jsx'
 import './Notebooks.css'
 
 // ── presets ──────────────────────────────────────────────────────────────────
@@ -33,6 +36,8 @@ function StatusBadge({ status }) {
     Pending:  { cls: 'pending', label: 'در حال راه‌اندازی' },
     Starting: { cls: 'pending', label: 'در حال راه‌اندازی' },
     Error:    { cls: 'error',   label: 'خطا' },
+    Stopping:    { cls: 'pending', label: 'در حال توقف' },
+    Terminating: { cls: 'pending', label: 'در حال حذف' },
   }
   const { cls, label } = MAP[status] || { cls: 'stopped', label: status }
   return (
@@ -309,11 +314,11 @@ function CreateModal({ opts, quota, onClose, onCreate }) {
 
 // ── main page ─────────────────────────────────────────────────────────────────
 export default function Notebooks() {
-  const { data, loading } = useApi('/api/notebooks', null)
+  const { data, loading, error } = useApi('/api/notebooks', null, [], adaptNotebooks)
   const { data: opts }    = useApi('/api/notebooks/options')
   const quota = opts?.quota || {}
 
-  const [openCreate, setOpenCreate] = useState(() => window.location.hash.includes('?new=1'))
+  const [openCreate, setOpenCreate] = useState(false)
   const [delTarget, setDelTarget]   = useState(null)
   const [toast, setToast]           = useState(null)
   const [query, setQuery]           = useState('')
@@ -342,7 +347,7 @@ export default function Notebooks() {
     })
   }
 
-  const isLoading = loading || data === null
+  const isLoading = loading && !error
 
   return (
     <AppShell active="نوت‌بوک‌ها">
@@ -351,7 +356,7 @@ export default function Notebooks() {
         <div className="nb-title-row">
           <h1>نوت‌بوک‌های من</h1>
           <div className="spacer" />
-          <button className="nb-new-btn" onClick={() => setOpenCreate(true)}>
+          <button className="nb-new-btn" {...soonProps}>
             <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
             نوت‌بوک جدید
           </button>
@@ -374,17 +379,19 @@ export default function Notebooks() {
           </div>
         )}
 
+        <ErrorNote error={error} />
+
         {/* skeleton */}
         {isLoading && <SkeletonRows />}
 
         {/* empty state */}
-        {!isLoading && raw.length === 0 && (
+        {!isLoading && !error && raw.length === 0 && (
           <div className="nb-empty-state">
             <div className="nb-empty-icon">📒</div>
             <h3>هنوز نوت‌بوکی ندارید</h3>
             <p>نوت‌بوک‌های Jupyter برای آموزش مدل، آنالیز داده و آزمایش سریع محیطی ایزوله می‌دهند.</p>
             <div className="nb-empty-actions">
-              <button className="nb-new-btn" onClick={() => setOpenCreate(true)}>
+              <button className="nb-new-btn" {...soonProps}>
                 <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
                 ساخت اولین نوت‌بوک
               </button>
@@ -425,7 +432,7 @@ export default function Notebooks() {
                       <td>
                         <div className="nb-name">{name}</div>
                       </td>
-                      <td><StatusBadge status={n.status} /></td>
+                      <td title={n.phase_message}><StatusBadge status={n.status} /></td>
                       <td>
                         <div className="nb-image-cell" title={n.image}>
                           <bdi dir="ltr">{n.image?.split('/').pop() || '—'}</bdi>
@@ -444,9 +451,7 @@ export default function Notebooks() {
                           <div className="nb-tooltip-wrap">
                             <button
                               className="nb-action-btn danger"
-                              disabled={!!inUse}
-                              onClick={() => setDelTarget(n)}
-                              title={inUse ? undefined : 'حذف'}
+                              {...soonProps}
                             >
                               <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
                             </button>

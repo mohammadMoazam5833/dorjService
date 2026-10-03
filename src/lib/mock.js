@@ -32,12 +32,13 @@ const DB = {
     backup_cost: { count: 4, usd: 3 },
   },
 
+  // real kubeflow-resource-usage shapes (phase/stopped/url), see src/lib/adapters/workloads.js
   '/api/notebooks': [
-    { name: 'vision-train',  status: 'Running', image: 'dorj/jupyter-pytorch-cuda-full:v1.10.0',     created_at: iso(2),  in_use_by: 'vision-workspace' },
-    { name: 'nlp-finetune',  status: 'Running', image: 'dorj/jupyter-tensorflow-cuda-full:v1.10.0',  created_at: iso(6),  in_use_by: '' },
-    { name: 'data-prep',     status: 'Stopped', image: 'dorj/jupyter-scipy:v1.10.0',                 created_at: iso(13), in_use_by: '' },
-    { name: 'gpu-experiment',status: 'Pending', image: 'dorj/jupyter-pytorch-cuda-full:v1.10.0',     created_at: iso(0),  in_use_by: '' },
-    { name: 'old-test',      status: 'Error',   image: 'dorj/jupyter-scipy:v1.10.0',                 created_at: iso(30), in_use_by: '' },
+    { name: 'vision-train',   phase: 'ready',   stopped: false, phase_message: 'Running', image: 'dorj/jupyter-pytorch-cuda-full:v1.10.0',    created_at: iso(2),  url: 'https://platform.isigpu.local/notebook/demo/vision-train/' },
+    { name: 'nlp-finetune',   phase: 'ready',   stopped: false, phase_message: 'Running', image: 'dorj/jupyter-tensorflow-cuda-full:v1.10.0', created_at: iso(6),  url: 'https://platform.isigpu.local/notebook/demo/nlp-finetune/' },
+    { name: 'data-prep',      phase: 'stopped', stopped: true,  phase_message: 'No Pods are currently running for this Notebook Server.', image: 'dorj/jupyter-scipy:v1.10.0', created_at: iso(13), url: 'https://platform.isigpu.local/notebook/demo/data-prep/' },
+    { name: 'gpu-experiment', phase: 'waiting', stopped: false, phase_message: 'Waiting for the Pod to be scheduled.', image: 'dorj/jupyter-pytorch-cuda-full:v1.10.0', created_at: iso(0), url: 'https://platform.isigpu.local/notebook/demo/gpu-experiment/' },
+    { name: 'old-test',       phase: 'warning', stopped: false, phase_message: 'ImagePullBackOff: image not found', image: 'dorj/jupyter-scipy:v1.10.0', created_at: iso(30), url: 'https://platform.isigpu.local/notebook/demo/old-test/' },
   ],
 
   '/api/notebooks/options': {
@@ -51,16 +52,16 @@ const DB = {
   },
 
   '/api/volumes': [
-    { name: 'vision-workspace', size: '20Gi', used_gib: 12, status: 'Bound', shared: false, in_use_by: 'vision-train', autoresize_enabled: true, viewer_url: '#' },
-    { name: 'datasets', size: '50Gi', used_gib: 33, status: 'Bound', shared: true, in_use_by: '', autoresize_enabled: false, viewer_url: '' },
-    { name: 'nlp-workspace', size: '15Gi', used_gib: null, status: 'Pending', shared: false, in_use_by: '', autoresize_enabled: false, viewer_url: '' },
+    { name: 'vision-workspace', size: '20Gi', used_gib: 12, status: 'Bound', shared: false, in_use_by: 'vision-train', autoresize_enabled: true, viewer_url: 'https://platform.isigpu.local/pvcviewers/demo/vision-workspace/' },
+    { name: 'datasets', size: '50Gi', used_gib: 33, status: 'Bound', shared: true, in_use_by: '', autoresize_enabled: false, viewer_url: null },
+    { name: 'nlp-workspace', size: '15Gi', used_gib: null, status: 'Pending', shared: false, in_use_by: '', autoresize_enabled: false, viewer_url: null },
   ],
   '/api/volumes/quota': { quota: { storage_remaining_gib: 6 } },
 
   '/api/vms/enabled': { enabled: true },
   '/api/vms': [
-    { name: 'inference-vm-01', status: 'Running', cpu: '8 هسته', memory: '32 GiB', ip: '10.20.4.11', created_at: iso(9) },
-    { name: 'build-runner', status: 'Stopped', cpu: '4 هسته', memory: '16 GiB', ip: '10.20.4.27', created_at: iso(21) },
+    { name: 'inference-vm-01', phase: 'Running', cpu_cores: 8, memory_request: '32Gi', ip_address: '10.20.4.11', created_at: iso(9), console_available: true },
+    { name: 'build-runner',    phase: 'Stopped', cpu_cores: 4, memory_request: '16Gi', ip_address: null, created_at: iso(21), console_available: false },
   ],
 
   '/api/mail/folders': {
@@ -69,8 +70,8 @@ const DB = {
   },
 
   '/api/backups': [
-    { name: 'vision-workspace-snap', created_at: iso(1), size: '12 GiB' },
-    { name: 'datasets-weekly', created_at: iso(7), size: '33 GiB' },
+    { name: 'vision-workspace-snap', created_at: iso(1), phase: 'Completed', size_gib: 12 },
+    { name: 'datasets-weekly',       created_at: iso(7), phase: 'Completed', size_gib: 33 },
   ],
 
   '/api/workgroup/get-all-namespaces': [['godarzi'], ['team-vision'], ['nlp-lab'], ['research'], ['sandbox']],

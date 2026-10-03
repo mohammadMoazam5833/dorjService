@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { adaptNotebooks, adaptVolumes } from '../lib/adapters/workloads.js'
 import { useApi } from '../lib/api.js'
 import './SearchModal.css'
 
@@ -24,8 +25,8 @@ export default function SearchModal({ onClose }) {
   const inputRef = useRef(null)
   const listRef = useRef(null)
 
-  const { data: notebooks } = useApi('/api/notebooks', [])
-  const { data: volumes } = useApi('/api/volumes', [])
+  const { data: notebooks } = useApi('/api/notebooks', [], [], adaptNotebooks)
+  const { data: volumes } = useApi('/api/volumes', [], [], adaptVolumes)
 
   const nbItems = (Array.isArray(notebooks) ? notebooks : []).map(n => ({
     label: n.name, sub: `نوت‌بوک · ${n.status}`, icon: '📒', route: 'notebooks',

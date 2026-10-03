@@ -216,3 +216,4 @@
   font-size: 16px; cursor: pointer; padding: 0; line-height: 1;
 }
 .vl-toast-close:hover { color: #fff; }
+.vl-soon { margin-inline-start: 6px; font-size: 10.5px; padding: 1px 6px; border-radius: 8px; background: #eef2f7; color: #56657f; }
