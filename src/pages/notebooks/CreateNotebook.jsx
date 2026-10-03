@@ -21,11 +21,15 @@ export default function CreateNotebook({ opts, onClose, onCreated }) {
   const freeVols = (vols || []).filter(v => !v.in_use_by && !v.shared && v.status === 'Bound')
 
   const [f, setF] = useState({ name: '', image: opts?.image_default || images[0] || '', cpu: '1', memory: '4', storage: '10',
-    gpuKey: '', gpuCount: '1', workspace: 'new', existingPvc: '', accessMode: 'ReadWriteOnce' })
+    gpuKey: '', gpuCount: '1', workspace: 'new', existingPvc: '', accessMode: 'ReadWriteOnce', dataVolumes: [] })
   const [preset, setPreset] = useState('sm')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const set = (k, v) => setF(s => ({ ...s, [k]: v }))
+  const setDv = (i, k, v) => setF(s => ({ ...s, dataVolumes: s.dataVolumes.map((d, j) => (j === i ? { ...d, [k]: v } : d)) }))
+  const addDv = () => setF(s => ({ ...s, dataVolumes: [...s.dataVolumes, { mode: 'new', name: '', size: '5', accessMode: 'ReadWriteOnce', existingPvc: '' }] }))
+  const rmDv = i => setF(s => ({ ...s, dataVolumes: s.dataVolumes.filter((_, j) => j !== i) }))
+  const taken = new Set([f.existingPvc, ...f.dataVolumes.map(d => d.existingPvc)].filter(Boolean))
   const applyPreset = p => { setPreset(p.id); setF(s => ({ ...s, cpu: p.cpu, memory: p.mem, storage: p.ws })) }
 
   const over = (val, rem) => rem !== undefined && Number(val) > rem
@@ -122,6 +126,32 @@ export default function CreateNotebook({ opts, onClose, onCreated }) {
                 </select>
               </>
             )}
+            <label className="nb-flabel">فضاهای داده (اختیاری)</label>
+            {f.dataVolumes.map((d, i) => (
+              <div key={i} className="nb-dv">
+                <div className="nb-seg">
+                  <button className={d.mode === 'new' ? 'on' : ''} onClick={() => setDv(i, 'mode', 'new')}>جدید</button>
+                  <button className={d.mode === 'existing' ? 'on' : ''} onClick={() => setDv(i, 'mode', 'existing')}>موجود</button>
+                  <button onClick={() => rmDv(i)} title="حذف">✕</button>
+                </div>
+                {d.mode === 'existing' ? (
+                  <select className="nb-finput" dir="ltr" value={d.existingPvc} onChange={e => setDv(i, 'existingPvc', e.target.value)}>
+                    <option value="">— انتخاب کنید —</option>
+                    {(vols || []).filter(v => v.status === 'Bound' && (!taken.has(v.name) || v.name === d.existingPvc)).map(v => <option key={v.name} value={v.name}>{v.name} ({v.size})</option>)}
+                  </select>
+                ) : (
+                  <div className="nb-finput-row">
+                    <input className="nb-finput" dir="ltr" placeholder="data-volume" value={d.name} onChange={e => setDv(i, 'name', e.target.value.toLowerCase())} />
+                    <input className="nb-finput" type="number" min="1" value={d.size} onChange={e => setDv(i, 'size', e.target.value)} title="GiB" />
+                    <select className="nb-finput" value={d.accessMode} onChange={e => setDv(i, 'accessMode', e.target.value)}>
+                      <option value="ReadWriteOnce">RWO</option><option value="ReadWriteMany">RWX</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            ))}
+            <button className="nb-adv-toggle" onClick={addDv}>+ افزودن فضای داده</button>
+            {f.dataVolumes.length > 0 && <div className="nb-fhint">فضاهای داده در <bdi dir="ltr">/home/jovyan/&lt;نام&gt;</bdi> سوار می‌شوند.</div>}
             {err && <div className="nb-form-err" role="alert" dir="auto">{err}</div>}
           </div>
 

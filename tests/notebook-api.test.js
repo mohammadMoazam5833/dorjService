@@ -28,3 +28,13 @@ test('resizePayload sends only changed fields', () => {
   assert.deepEqual(resizePayload({ cpu: '4', memory: '', storage: '30', gpuKey: '', gpuCount: '' }), { resize: { cpu_limit: '4', storage: '30Gi' } })
   assert.deepEqual(resizePayload({ cpu: '', memory: '16', storage: '', gpuKey: 'nvidia.com/mig-1g.10gb', gpuCount: '2' }), { resize: { memory_limit: '16Gi', gpu_key: 'nvidia.com/mig-1g.10gb', gpu_count: '2' } })
 })
+
+test('createPayload maps data volumes like the platform form', () => {
+  const p = createPayload({ name: 'nb', image: 'i', cpu: '1', memory: '2', storage: '5', workspace: 'new', accessMode: 'ReadWriteOnce',
+    dataVolumes: [{ mode: 'existing', existingPvc: 'datasets' }, { mode: 'new', name: 'scratch', size: '20', accessMode: 'ReadWriteMany' }, { mode: 'new', name: '', size: '5' }] })
+  assert.deepEqual(p.data_volumes, [
+    { existing_pvc: 'datasets', mount_path: '/home/jovyan/datasets' },
+    { name: 'scratch', size: '20Gi', access_mode: 'ReadWriteMany' },
+  ])
+  assert.equal(createPayload({ name: 'x', image: 'i', workspace: 'new' }).data_volumes, undefined)
+})

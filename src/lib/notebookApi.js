@@ -21,6 +21,12 @@ export function createPayload(f) {
   }
   if (f.gpuKey) { body.gpu_key = f.gpuKey; body.gpu_count = String(f.gpuCount || '1') }
   if (f.workspace === 'existing' && f.existingPvc) body.workspace_existing_pvc = f.existingPvc
+  const dv = (f.dataVolumes || [])
+    .filter(d => (d.mode === 'existing' ? d.existingPvc : d.name))
+    .map(d => d.mode === 'existing'
+      ? { existing_pvc: d.existingPvc, mount_path: `/home/jovyan/${d.existingPvc}` }
+      : { name: d.name.trim(), size: normalizeGib(d.size || '5'), access_mode: d.accessMode || 'ReadWriteOnce' })
+  if (dv.length) body.data_volumes = dv
   return body
 }
 
