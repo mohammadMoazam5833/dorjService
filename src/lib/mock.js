@@ -1,5 +1,6 @@
 // Design-mode mock API. Intercepts /api and /admin-panel/api requests so every
 // page renders with realistic Persian data without a live backend.
+export const MOCK_MARKER = '__DORJ_MOCK_API__' // scripts/check-dist.mjs fails the build if this ships
 
 const now = Date.now()
 const iso = daysAgo => new Date(now - daysAgo * 864e5).toISOString()
@@ -160,6 +161,7 @@ function resolve(path) {
 }
 
 export function installMockApi() {
+  window[MOCK_MARKER] = true
   const real = window.fetch.bind(window)
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input?.url || ''
