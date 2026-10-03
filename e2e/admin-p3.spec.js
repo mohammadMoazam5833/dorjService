@@ -63,3 +63,32 @@ test('groups: create, members dialog, delete a throwaway group', async ({ page }
   await page.locator('.cd-modal .cd-danger').click()
   await expect.poll(async () => ((await api(page, '/admin-panel/api/admin/groups')).json || []).some(g => g.name === GROUP), { timeout: 30_000 }).toBe(false)
 })
+
+// Read-only on purpose: these tabs hold platform-wide settings (branding, SMTP, pricing, keys).
+test('notebook options, branding, settings, broadcast, requests load', async ({ page }) => {
+  const bad = []
+  page.on('response', r => { const u = new URL(r.url()); if (u.pathname.startsWith('/admin-panel/api/') && r.status() >= 400) bad.push(`${r.status()} ${u.pathname}`) })
+  await login(page, G, process.env.E2E_ADMIN_USER, process.env.E2E_ADMIN_PASS)
+  await openTab(page, 'تنظیمات نوت‌بوک')
+  await expect(page.locator('.ak-card h2', { hasText: 'ایمیج‌های نوت‌بوک' })).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.ak-card input.ak-input').first()).toHaveValue(/.+/)
+  await openTab(page, 'ظاهر پلتفرم')
+  await expect(page.locator('.ak-card h2', { hasText: 'ظاهر پلتفرم' })).toBeVisible()
+  await openTab(page, 'تنظیمات')
+  for (const st of ['قیمت‌گذاری', 'SMTP', 'پیام صفحه‌ی ورود', 'Active Directory', 'نشست‌ها', 'آپلود', 'ورودهای ناموفق']) {
+    await page.locator('.ak-tabs button', { hasText: st }).click()
+    await expect(page.locator('.ak-card h2').first()).toBeVisible({ timeout: 30_000 })
+  }
+  await openTab(page, 'ارسال گروهی ایمیل')
+  for (const st of ['ارسال گروهی', 'دسته‌ها', 'ارسال مستقیم', 'تاریخچه']) {
+    await page.locator('.ak-tabs button', { hasText: st }).click()
+    await expect(page.locator('.ak-card h2').first()).toBeVisible()
+  }
+  await openTab(page, 'درخواست‌ها')
+  await expect(page.locator('.ak-checks .ak-check').first()).toBeVisible({ timeout: 30_000 })
+  await page.locator('.ak-tabs button', { hasText: 'کلیدهای LLM' }).click()
+  await expect(page.locator('.ak-table')).toBeVisible({ timeout: 30_000 })
+  await page.locator('.ak-tabs button', { hasText: 'درخواست‌های انتشار سرویس' }).click()
+  await expect(page.locator('.ak-table')).toBeVisible({ timeout: 30_000 })
+  expect(bad, bad.join('\n')).toEqual([])
+})

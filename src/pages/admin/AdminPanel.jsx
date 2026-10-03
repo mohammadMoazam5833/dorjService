@@ -7,7 +7,12 @@ import Gpu from './Gpu.jsx'
 import ModelsAdmin from './ModelsAdmin.jsx'
 import Groups from './Groups.jsx'
 import Access from './Access.jsx'
-import { NotebookOptions, Branding, Settings, AccessMatrix, Broadcast, LlmIssue, Assistant, Security, Monitoring, SoonPanel } from './Misc.jsx'
+import NotebookOptions from './NotebookOptions.jsx'
+import Branding from './Branding.jsx'
+import Settings from './Settings.jsx'
+import Broadcast from './Broadcast.jsx'
+import Requests from './Requests.jsx'
+import { Assistant, Security, Monitoring, SoonPanel } from './Misc.jsx'
 import { visibleTabs } from '../../lib/admin/units.js'
 import { useWhoami } from './kit.jsx'
 import './AdminPanel.css'
@@ -57,7 +62,7 @@ function renderPage(id) {
     case 'troubleshoot':     return <Assistant />
     case 'broadcast':        return <Broadcast />
     case 'security':         return <Security />
-    case 'requests':         return <LlmIssue />
+    case 'requests':         return <Requests />
     case 'units':            return <SoonPanel title="واحدها" />
     case 'my-unit':          return <SoonPanel title="واحد من" />
     default:                 return null
