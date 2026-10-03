@@ -11,5 +11,4 @@
 .md-bar { height: 6px; background: #eef2f7; border-radius: 99px; overflow: hidden; }
 .md-bar > div { height: 100%; background: #0d9488; transition: width .4s; }
 .md-readme { white-space: pre-wrap; max-height: 40vh; overflow: auto; background: #f8fafc; border-radius: 10px; padding: 12px; font-size: 12.5px; }
-.ak-warn { background: #fff7e6; border: 1px solid #f0c36d; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
 .ak-textarea.mono { font-family: Menlo, Consolas, monospace; font-size: 12.5px; }

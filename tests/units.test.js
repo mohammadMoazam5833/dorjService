@@ -24,3 +24,24 @@ test('remaining, quota errors, gpu choices', () => {
   assert.deepEqual(quotaErrors({ cpu_limit: '1', memory_limit: '20Gi' }, left), { cpu: '1 > 0', memory: `20Gi > ${16 * 2 ** 30}` })
   assert.deepEqual(gpuChoices({ cpu: 1, 'nvidia.com/gpu': 2 }), ['nvidia.com/gpu'])
 })
+
+import { budgetBars, specFromForm, UNIT_FLAGS } from '../src/lib/admin/units.js'
+
+test('budgetBars reports allocated vs budget per key and warns above 90%', () => {
+  const bars = budgetBars({ budget: { cpu: '10', memory: '10Gi' }, allocated: { cpu: '9500m' } })
+  assert.deepEqual(bars.map(b => [b.key, b.pct, b.warn, b.text]), [['cpu', 95, true, '9500m / 10'], ['memory', 0, false, '0 / 10Gi']])
+})
+
+test('specFromForm builds the unit spec and parses GPU lines', () => {
+  const spec = specFromForm({ fa: ' واحد ', en: 'Lab', admins: 'a, b,', cpu: '64', memory: '', storage: '2Ti', gpus: 'nvidia.com/gpu=4\n\nnvidia.com/mig-1g.10gb = 2', permissions: { llmKeys: true }, roles: ['r'], models: ['m'] })
+  assert.deepEqual(spec.budget, { cpu: '64', storage: '2Ti', 'nvidia.com/gpu': 4, 'nvidia.com/mig-1g.10gb': 2 })
+  assert.deepEqual(spec.admins, ['a', 'b'])
+  assert.deepEqual(spec.displayName, { fa: 'واحد', en: 'Lab' })
+  assert.equal(Object.keys(spec.permissions).length, UNIT_FLAGS.length)
+  assert.equal(spec.permissions.llmKeys, true)
+  assert.equal(spec.permissions.accessAndGroups, false)
+})
+
+test('specFromForm rejects a GPU line it cannot parse', () => {
+  assert.throws(() => specFromForm({ fa: '', en: '', admins: '', gpus: 'gpu: 4' }), /GPU/)
+})

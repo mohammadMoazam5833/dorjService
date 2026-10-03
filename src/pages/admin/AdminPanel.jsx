@@ -12,7 +12,11 @@ import Branding from './Branding.jsx'
 import Settings from './Settings.jsx'
 import Broadcast from './Broadcast.jsx'
 import Requests from './Requests.jsx'
-import { Assistant, Security, Monitoring, SoonPanel } from './Misc.jsx'
+import Units from './Units.jsx'
+import MyUnit from './MyUnit.jsx'
+import Assistant from './Assistant.jsx'
+import Monitoring from './Monitoring.jsx'
+import Security from './Security.jsx'
 import { visibleTabs } from '../../lib/admin/units.js'
 import { useWhoami } from './kit.jsx'
 import './AdminPanel.css'
@@ -63,8 +67,8 @@ function renderPage(id) {
     case 'broadcast':        return <Broadcast />
     case 'security':         return <Security />
     case 'requests':         return <Requests />
-    case 'units':            return <SoonPanel title="واحدها" />
-    case 'my-unit':          return <SoonPanel title="واحد من" />
+    case 'units':            return <Units />
+    case 'my-unit':          return <MyUnit />
     default:                 return null
   }
 }
