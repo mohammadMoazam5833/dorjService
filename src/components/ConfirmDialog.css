@@ -1,0 +1,21 @@
+.cd-backdrop { position: fixed; inset: 0; background: rgba(10, 20, 40, .45); z-index: 900; }
+.cd-modal { position: fixed; z-index: 901; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 32px));
+  background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 30px 80px -30px rgba(0,0,0,.5); }
+.cd-modal h3 { margin: 0 0 10px; font-size: 17px; color: #0c1a33; }
+.cd-body { font-size: 13.5px; color: #56657f; line-height: 1.8; }
+.cd-label { display: block; margin: 14px 0 6px; font-size: 12.5px; color: #56657f; }
+.cd-input { width: 100%; box-sizing: border-box; height: 40px; border: 1.5px solid #dde5f0; border-radius: 10px; padding: 0 12px; font-size: 14px; }
+.cd-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.cd-btn { height: 38px; padding: 0 18px; border-radius: 10px; border: 1px solid #dde5f0; background: #fff; cursor: pointer; font-family: inherit; font-size: 13.5px; }
+.cd-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cd-primary { background: #1E3A8A; border-color: #1E3A8A; color: #fff; }
+.cd-danger { background: #c62828; border-color: #c62828; color: #fff; }
+
+.dj-toasts { position: fixed; bottom: 20px; inset-inline-start: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.dj-toast { min-width: 220px; max-width: min(420px, calc(100vw - 40px)); padding: 11px 16px; border-radius: 10px; font-family: 'Vazirmatn', sans-serif; font-size: 13.5px;
+  color: #fff; box-shadow: 0 10px 30px -12px rgba(0,0,0,.45); transition: opacity .25s, transform .25s; overflow-wrap: anywhere; }
+.dj-toast-success { background: #0f766e; }
+.dj-toast-error { background: #b3261e; }
+.dj-toast.out { opacity: 0; transform: translateY(8px); }
+
+.dj-term-box { height: 420px; background: #1e1e1e; border-radius: 10px; padding: 6px; }

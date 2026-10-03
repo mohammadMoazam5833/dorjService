@@ -27,6 +27,12 @@ export const adaptNotebooks = raw => list(raw).map(n => ({
   url: relativeUrl(n.url),
   in_use_by: '',
   phase_message: n.phase_message || '',
+  stopped: !!n.stopped,
+  cpu_limit: n.cpu_limit ?? null,
+  memory_limit: n.memory_limit ?? null,
+  storage: n.storage ?? null,
+  gpu_key: n.gpu_key ?? null,
+  gpu_count: n.gpu_count ?? null,
 }))
 
 export const adaptVolumes = raw => list(raw).map(v => ({ ...v, viewer_url: relativeUrl(v.viewer_url) || '' }))

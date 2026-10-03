@@ -3,6 +3,7 @@ import { PrefsProvider } from './lib/prefs.jsx'
 import App from './App.jsx'
 import './styles/tokens.css'
 import './styles/pages.css'
+import './components/ConfirmDialog.css'
 
 // Design-time mock API only under `vite dev`; production talks to the real backends.
 const ready: Promise<unknown> = import.meta.env.DEV

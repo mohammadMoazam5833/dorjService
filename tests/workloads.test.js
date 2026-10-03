@@ -45,3 +45,8 @@ test('backups render size from size_gib', () => {
     [{ name: 'b', created_at: '2026-10-01T00:00:00Z', size: '1.5 GiB', phase: 'Completed' }])
   assert.equal(adaptBackups([{ name: 'b', size_gib: null }])[0].size, '—')
 })
+
+test('notebook adapter keeps resource fields for resize', () => {
+  const n = adaptNotebooks([{ name: 'a', phase: 'ready', stopped: false, cpu_limit: '2', memory_limit: '8Gi', storage: '20Gi', gpu_key: 'nvidia.com/gpu', gpu_count: '1' }])[0]
+  assert.deepEqual([n.cpu_limit, n.memory_limit, n.storage, n.gpu_key, n.gpu_count, n.stopped], ['2', '8Gi', '20Gi', 'nvidia.com/gpu', '1', false])
+})

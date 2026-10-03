@@ -1,464 +1,154 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import AppShell from '../components/AppShell.jsx'
-import { useApi, apiPost } from '../lib/api.js'
+import { useApi, apiSend, invalidate } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
 import { adaptNotebooks } from '../lib/adapters/workloads.js'
-import { soonProps } from '../lib/soon.js'
+import { notifySuccess, notifyError } from '../lib/notify.js'
 import ErrorNote from '../components/ErrorNote.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import CreateNotebook from './notebooks/CreateNotebook.jsx'
+import ResizeNotebook from './notebooks/ResizeNotebook.jsx'
+import NotebookDetails from './notebooks/NotebookDetails.jsx'
+import { openInApp } from './Embed.jsx'
 import './Notebooks.css'
 
-// ── presets ──────────────────────────────────────────────────────────────────
-const PRESETS = [
-  { id: 'sm',  icon: '🌱', name: 'کوچک',    cpu: '1', mem: '4',  ws: '10', gpu: false, costH: 2500 },
-  { id: 'md',  icon: '⚡', name: 'متوسط',   cpu: '4', mem: '16', ws: '20', gpu: false, costH: 9000 },
-  { id: 'gpu', icon: '🚀', name: 'GPU',      cpu: '8', mem: '32', ws: '40', gpu: true,  costH: 46000 },
-]
-
-const CPU_RATE  = 1800   // ریال per core/h
-const MEM_RATE  = 400    // ریال per GiB/h
-const GPU_RATE  = 36000  // ریال per GPU/h
-const DISK_RATE = 80     // ریال per GiB/h
-
-function calcCost(cpu, mem, ws, hasGpu) {
-  return (
-    Number(cpu || 0) * CPU_RATE +
-    Number(mem || 0) * MEM_RATE +
-    Number(ws  || 0) * DISK_RATE +
-    (hasGpu ? GPU_RATE : 0)
-  )
+const STATUS = {
+  Running:     { cls: 'running', label: 'در حال اجرا' },
+  Stopped:     { cls: 'stopped', label: 'متوقف' },
+  Pending:     { cls: 'pending', label: 'در حال راه‌اندازی' },
+  Stopping:    { cls: 'pending', label: 'در حال توقف' },
+  Terminating: { cls: 'pending', label: 'در حال حذف' },
+  Error:       { cls: 'error',   label: 'خطا' },
+}
+function StatusBadge({ status, message }) {
+  const { cls, label } = STATUS[status] || { cls: 'stopped', label: status }
+  return <span className={`nb-status ${cls}`} title={message || undefined}><span className="nb-status-dot" />{label}</span>
 }
 
-// ── status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const MAP = {
-    Running:  { cls: 'running', label: 'در حال اجرا' },
-    Stopped:  { cls: 'stopped', label: 'متوقف' },
-    Pending:  { cls: 'pending', label: 'در حال راه‌اندازی' },
-    Starting: { cls: 'pending', label: 'در حال راه‌اندازی' },
-    Error:    { cls: 'error',   label: 'خطا' },
-    Stopping:    { cls: 'pending', label: 'در حال توقف' },
-    Terminating: { cls: 'pending', label: 'در حال حذف' },
-  }
-  const { cls, label } = MAP[status] || { cls: 'stopped', label: status }
-  return (
-    <div>
-      <span className={`nb-status ${cls}`}>
-        <span className="nb-status-dot" />
-        {label}
-      </span>
-      {cls === 'pending' && (
-        <div className="nb-status-progress">
-          <div className="nb-mini-progress"><div className="nb-mini-fill" /></div>
-          <span>راه‌اندازی در حال انجام…</span>
-        </div>
-      )}
-    </div>
-  )
+const COLS = [['name', 'نام'], ['status', 'وضعیت'], ['image', 'ایمیج'], ['resources', 'منابع'], ['created_at', 'ایجاد']]
+const sortVal = (n, k) => (k === 'resources' ? Number(String(n.cpu_limit || 0)) : String(n[k] ?? '').toLowerCase())
+const enc = encodeURIComponent
+
+const Icon = ({ d }) => <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor" aria-hidden="true"><path d={d} /></svg>
+const I = {
+  open: 'M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
+  start: 'M8 5v14l11-7z',
+  stop: 'M6 6h12v12H6z',
+  info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z',
+  resize: 'M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z',
+  del: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
 }
 
-// ── quota bar ─────────────────────────────────────────────────────────────────
-function QuotaBar({ label, used, total, unit, selected }) {
-  const used2 = used + selected
-  const pct = total > 0 ? Math.min(100, (used2 / total) * 100) : 0
-  const fillCls = pct > 85 ? 'danger' : pct > 60 ? 'warn' : 'ok'
-  const rem = Math.max(0, total - used2)
-  return (
-    <div className="nb-quota-item">
-      <div className="nb-quota-row">
-        <span className="nb-quota-lbl">{label}</span>
-        <span className="nb-quota-rem">{rem} {unit} باقی</span>
-      </div>
-      <div className="nb-qbar">
-        <div className="nb-qfill" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
-}
-
-// ── skeleton ─────────────────────────────────────────────────────────────────
-function SkeletonRows() {
-  return Array.from({ length: 3 }).map((_, i) => (
-    <div key={i} className="nb-skeleton-row">
-      <div className="sk sk-name" />
-      <div style={{ flex: 1 }} />
-      <div className="sk sk-badge" />
-      <div style={{ flex: 1 }} />
-      <div className="sk sk-text" style={{ width: 200 }} />
-      <div style={{ flex: 1 }} />
-      <div className="sk sk-text" style={{ width: 80 }} />
-    </div>
-  ))
-}
-
-// ── toast ────────────────────────────────────────────────────────────────────
-function Toast({ msg, onUndo, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4500)
-    return () => clearTimeout(t)
-  }, [onClose])
-  return (
-    <div className="nb-toast" dir="rtl">
-      <span>{msg}</span>
-      {onUndo && <button className="nb-toast-undo" onClick={onUndo}>بازگردانی</button>}
-      <button className="nb-toast-close" onClick={onClose}>✕</button>
-    </div>
-  )
-}
-
-// ── delete confirm ───────────────────────────────────────────────────────────
-function DeleteModal({ notebook, onConfirm, onCancel }) {
-  const [typed, setTyped] = useState('')
-  const inputRef = useRef(null)
-  useEffect(() => { inputRef.current?.focus() }, [])
-  const name = notebook.name || notebook.id || ''
-  const inUse = notebook.in_use_by
-  return (
-    <>
-      <div className="nb-create-backdrop" style={{ zIndex: 302 }} onClick={onCancel} />
-      <div className="nb-del-modal" dir="rtl">
-        <h3>حذف نوت‌بوک</h3>
-        <p>
-          نوت‌بوک <strong>{name}</strong> به‌طور کامل حذف می‌شود. این عملیات قابل بازگشت نیست.
-        </p>
-        {inUse && (
-          <div style={{ background: '#fff8e7', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#b8790a', marginBottom: 12 }}>
-            این نوت‌بوک در حال استفاده از فضای ذخیره‌سازی «{inUse}» است. ابتدا نوت‌بوک را متوقف کنید.
-          </div>
-        )}
-        <div className="nb-del-confirm-label">برای تأیید، نام نوت‌بوک را بنویسید:</div>
-        <input
-          ref={inputRef}
-          className="nb-del-confirm-input"
-          placeholder={name}
-          value={typed}
-          onChange={e => setTyped(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && typed === name && !inUse && onConfirm()}
-        />
-        <div className="nb-del-actions">
-          <button className="nb-btn-cancel" onClick={onCancel}>انصراف</button>
-          <button className="nb-btn-del" disabled={typed !== name || !!inUse} onClick={onConfirm}>حذف</button>
-        </div>
-      </div>
-    </>
-  )
-}
-
-// ── create modal ─────────────────────────────────────────────────────────────
-function CreateModal({ opts, quota, onClose, onCreate }) {
-  const images = opts?.image_options || ['dorj/notebook-servers/jupyter-pytorch-cuda-full:v1.10.0']
-  const q = quota || {}
-
-  const [preset, setPreset] = useState('sm')
-  const [name, setName]     = useState('')
-  const [image, setImage]   = useState(images[0])
-  const [cpu, setCpu]       = useState(PRESETS[0].cpu)
-  const [mem, setMem]       = useState(PRESETS[0].mem)
-  const [ws, setWs]         = useState(PRESETS[0].ws)
-  const [hasGpu, setHasGpu] = useState(false)
-  const [mode, setMode]     = useState('ReadWriteOnce')
-  const [permanent, setPermanent] = useState(true)
-  const [adv, setAdv]       = useState(false)
-  const [saving, setSaving] = useState(false)
-
-  const applyPreset = p => {
-    setPreset(p.id)
-    setCpu(p.cpu); setMem(p.mem); setWs(p.ws); setHasGpu(p.gpu)
-  }
-
-  const costH = calcCost(cpu, mem, ws, hasGpu)
-  const costDay = costH * 24
-
-  const usedCpu = (q.cpu_total_cores || 8) - (q.cpu_remaining_cores || 8)
-  const usedMem = (q.memory_total_gib || 32) - (q.memory_remaining_gib || 32)
-  const usedDisk = (q.storage_total_gib || 10) - (q.storage_remaining_gib || 10)
-
-  const canCreate = name.trim().length >= 2 && Number(cpu) > 0 && Number(mem) > 0
-
-  const submit = async () => {
-    setSaving(true)
-    await apiPost('/api/notebooks', { name: name.trim(), image, cpu, memory_gib: mem, workspace_size_gib: ws, access_mode: mode, permanent })
-    setSaving(false)
-    onCreate(name.trim())
-    onClose()
-  }
-
-  return (
-    <>
-      <div className="nb-create-backdrop" onClick={onClose} />
-      <div className="nb-create-modal" dir="rtl">
-        {/* header */}
-        <div className="nb-modal-head">
-          <h2>ایجاد نوت‌بوک جدید</h2>
-          <button className="nb-modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        {/* presets */}
-        <div className="nb-presets">
-          {PRESETS.map(p => (
-            <button key={p.id} className={`nb-preset ${preset === p.id ? 'active' : ''}`} onClick={() => applyPreset(p)}>
-              <div className="nb-preset-icon">{p.icon}</div>
-              <div className="nb-preset-name">{p.name}</div>
-              <div className="nb-preset-spec">{p.cpu} هسته · {p.mem} GiB{p.gpu ? ' · ۱ GPU' : ''}</div>
-              <div className="nb-preset-cost">~{p.costH.toLocaleString('en-US')} ریال/ساعت</div>
-            </button>
-          ))}
-        </div>
-
-        {/* body */}
-        <div className="nb-modal-body">
-          {/* form */}
-          <div className="nb-form-col">
-            <label className="nb-flabel">نام نوت‌بوک</label>
-            <input className="nb-finput" placeholder="my-notebook" value={name} onChange={e => setName(e.target.value)} autoFocus />
-
-            <label className="nb-flabel">ایمیج</label>
-            <select className="nb-finput" value={image} onChange={e => setImage(e.target.value)}>
-              {images.map(i => <option key={i} value={i}>{i.split('/').pop()}</option>)}
-            </select>
-
-            <label className="nb-flabel">منابع</label>
-            <div className="nb-finput-row">
-              <div>
-                <div style={{ fontSize: 11, color: '#8fa3b8', marginBottom: 4 }}>CPU (هسته)</div>
-                <input className="nb-finput" type="number" min="1" value={cpu} onChange={e => setCpu(e.target.value)} />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#8fa3b8', marginBottom: 4 }}>RAM (GiB)</div>
-                <input className="nb-finput" type="number" min="1" value={mem} onChange={e => setMem(e.target.value)} />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#8fa3b8', marginBottom: 4 }}>دیسک (GiB)</div>
-                <input className="nb-finput" type="number" min="1" value={ws} onChange={e => setWs(e.target.value)} />
-              </div>
-            </div>
-
-            {/* advanced */}
-            <button className="nb-adv-toggle" onClick={() => setAdv(a => !a)}>
-              <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" style={{ transform: adv ? 'rotate(90deg)' : 'none', transition: 'transform .18s' }}>
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              گزینه‌های پیشرفته
-            </button>
-            {adv && (
-              <div className="nb-adv-content">
-                <label className="nb-flabel">حالت دسترسی فضای ذخیره‌سازی</label>
-                <select className="nb-finput" value={mode} onChange={e => setMode(e.target.value)}>
-                  <option value="ReadWriteOnce">ReadWriteOnce — اختصاصی</option>
-                  <option value="ReadOnlyMany">ReadOnlyMany — فقط‌خواندنی</option>
-                  <option value="ReadWriteMany">ReadWriteMany — اشتراکی</option>
-                </select>
-                <label className="nb-check-row">
-                  <input type="checkbox" checked={permanent} onChange={e => setPermanent(e.target.checked)} />
-                  <span>ذخیره‌سازی دائمی (توصیه‌شده)</span>
-                </label>
-              </div>
-            )}
-
-            {!hasGpu && (
-              <div style={{ marginTop: 12, background: '#f4f7f9', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#56657f' }}>
-                برای استفاده از GPU پیش‌تنظیم «GPU» را انتخاب کنید.
-              </div>
-            )}
-          </div>
-
-          {/* sidebar */}
-          <div className="nb-sidebar-col">
-            <div className="nb-cost-head">برآورد هزینه</div>
-            <div className="nb-cost-line">
-              <span className="nb-cost-label">CPU ({cpu} هسته)</span>
-              <span className="nb-cost-val">{(Number(cpu) * CPU_RATE).toLocaleString('en-US')}</span>
-            </div>
-            <div className="nb-cost-line">
-              <span className="nb-cost-label">RAM ({mem} GiB)</span>
-              <span className="nb-cost-val">{(Number(mem) * MEM_RATE).toLocaleString('en-US')}</span>
-            </div>
-            <div className="nb-cost-line">
-              <span className="nb-cost-label">دیسک ({ws} GiB)</span>
-              <span className="nb-cost-val">{(Number(ws) * DISK_RATE).toLocaleString('en-US')}</span>
-            </div>
-            {hasGpu && (
-              <div className="nb-cost-line">
-                <span className="nb-cost-label">GPU (۱ واحد)</span>
-                <span className="nb-cost-val">{GPU_RATE.toLocaleString('en-US')}</span>
-              </div>
-            )}
-            <div className="nb-cost-total">
-              <span className="nb-cost-total-label">ساعتی</span>
-              <span className="nb-cost-total-val">{costH.toLocaleString('en-US')} ﷼</span>
-            </div>
-            <div className="nb-cost-line" style={{ paddingTop: 4 }}>
-              <span className="nb-cost-label">روزانه (تقریبی)</span>
-              <span className="nb-cost-val">{costDay.toLocaleString('en-US')}</span>
-            </div>
-
-            <div className="nb-quota-head">سهمیه namespace</div>
-            <QuotaBar label="CPU" used={usedCpu} total={q.cpu_total_cores || 8} unit="هسته" selected={Number(cpu) || 0} />
-            <QuotaBar label="RAM" used={usedMem} total={q.memory_total_gib || 32} unit="GiB" selected={Number(mem) || 0} />
-            <QuotaBar label="دیسک" used={usedDisk} total={q.storage_total_gib || 10} unit="GiB" selected={Number(ws) || 0} />
-          </div>
-        </div>
-
-        {/* footer */}
-        <div className="nb-modal-foot">
-          <span style={{ fontSize: 12, color: '#8fa3b8' }}>هزینه فقط زمان اجرا محاسبه می‌شود</span>
-          <div className="spacer" />
-          <button className="nb-btn-cancel" onClick={onClose}>انصراف</button>
-          <button className="nb-btn-create" onClick={submit} disabled={saving || !canCreate}>
-            {saving ? 'در حال ایجاد…' : 'ایجاد نوت‌بوک'}
-          </button>
-        </div>
-      </div>
-    </>
-  )
-}
-
-// ── main page ─────────────────────────────────────────────────────────────────
 export default function Notebooks() {
-  const { data, loading, error } = useApi('/api/notebooks', null, [], adaptNotebooks)
-  const { data: opts }    = useApi('/api/notebooks/options')
-  const quota = opts?.quota || {}
+  const { data, loading, error, reload } = useApi('/api/notebooks', null, [], adaptNotebooks)
+  const { data: opts } = useApi('/api/notebooks/options')
+  const [create, setCreate] = useState(false)
+  const [resize, setResize] = useState(null)
+  const [details, setDetails] = useState(null)
+  const [del, setDel] = useState(null)
+  const [busy, setBusy] = useState('')
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState({ key: 'created_at', dir: 'desc' })
+  const [page, setPage] = useState(0)
 
-  const [openCreate, setOpenCreate] = useState(false)
-  const [delTarget, setDelTarget]   = useState(null)
-  const [toast, setToast]           = useState(null)
-  const [query, setQuery]           = useState('')
-  const [page, setPage]             = useState(0)
-
-  const raw  = Array.isArray(data) ? data : []
-  const list = raw.filter(n => !query || (n.name || n.id || '').toLowerCase().includes(query.toLowerCase()))
-  const PER  = 10
+  const raw = Array.isArray(data) ? data : []
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const f = raw.filter(n => !q || n.name.toLowerCase().includes(q) || n.image.toLowerCase().includes(q))
+    return f.sort((a, b) => {
+      const x = sortVal(a, sort.key), y = sortVal(b, sort.key)
+      return (x > y ? 1 : x < y ? -1 : 0) * (sort.dir === 'asc' ? 1 : -1)
+    })
+  }, [raw, query, sort])
+  const PER = 10
   const pages = Math.max(1, Math.ceil(list.length / PER))
   const shown = list.slice(page * PER, page * PER + PER)
+  const toggleSort = key => setSort(s => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }))
+  const refresh = () => { invalidate('/api/notebooks'); invalidate('/api/resource-usage'); reload() }
 
-  const showToast = (msg, onUndo) => {
-    setToast({ msg, onUndo, key: Date.now() })
+  const startStop = async n => {
+    const stop = n.status !== 'Stopped'
+    setBusy(n.name)
+    const r = await apiSend(`/api/notebooks/${enc(n.name)}`, 'PATCH', { stopped: stop })
+    setBusy('')
+    if (r.error) { notifyError(r.error.message); return }
+    notifySuccess(stop ? `نوت‌بوک «${n.name}» در حال توقف است` : `نوت‌بوک «${n.name}» در حال راه‌اندازی است`)
+    refresh()
   }
-
-  const handleCreate = name => {
-    showToast(`نوت‌بوک «${name}» در حال راه‌اندازی است`)
-    setTimeout(() => window.location.reload(), 300)
-  }
-
-  const handleDelete = async () => {
-    const name = delTarget.name || delTarget.id
-    setDelTarget(null)
-    showToast(`نوت‌بوک «${name}» حذف شد`, () => {
-      showToast('بازگردانی فعلاً پشتیبانی نمی‌شود.')
-    })
+  const doDelete = async () => {
+    const n = del
+    setBusy(n.name)
+    const r = await apiSend(`/api/notebooks/${enc(n.name)}`, 'DELETE')
+    setBusy(''); setDel(null)
+    if (r.error) { notifyError(r.error.message); return }
+    notifySuccess(`نوت‌بوک «${n.name}» حذف شد`)
+    refresh(); invalidate('/api/volumes')
   }
 
   const isLoading = loading && !error
-
   return (
     <AppShell active="نوت‌بوک‌ها">
       <div className="nb-page">
-        {/* title */}
         <div className="nb-title-row">
           <h1>نوت‌بوک‌های من</h1>
           <div className="spacer" />
-          <button className="nb-new-btn" {...soonProps}>
-            <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
-            نوت‌بوک جدید
+          <button className="nb-new-btn" onClick={() => setCreate(true)} disabled={!opts}>
+            <Icon d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /> نوت‌بوک جدید
           </button>
         </div>
 
-        {/* search bar */}
-        {!isLoading && raw.length > 0 && (
-          <div className="nb-bar">
-            <div className="nb-search-wrap">
-              <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor">
-                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-              </svg>
-              <input
-                className="nb-search-input" placeholder="جستجوی نوت‌بوک…"
-                value={query} onChange={e => { setQuery(e.target.value); setPage(0) }}
-              />
-            </div>
-            <div className="spacer" />
-            <span className="nb-count">{list.length} نوت‌بوک</span>
+        <div className="nb-bar">
+          <div className="nb-search-wrap">
+            <input className="nb-search-input" placeholder="جستجوی نوت‌بوک یا ایمیج…" value={query} onChange={e => { setQuery(e.target.value); setPage(0) }} />
           </div>
-        )}
+          <div className="spacer" />
+          <button className="nb-action-btn" title="تازه‌سازی" onClick={refresh}><Icon d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" /></button>
+          <span className="nb-count">{list.length} نوت‌بوک</span>
+        </div>
 
         <ErrorNote error={error} />
+        {isLoading && <p className="nb-fhint" style={{ padding: 24 }}>در حال بارگذاری…</p>}
 
-        {/* skeleton */}
-        {isLoading && <SkeletonRows />}
-
-        {/* empty state */}
         {!isLoading && !error && raw.length === 0 && (
           <div className="nb-empty-state">
             <div className="nb-empty-icon">📒</div>
             <h3>هنوز نوت‌بوکی ندارید</h3>
             <p>نوت‌بوک‌های Jupyter برای آموزش مدل، آنالیز داده و آزمایش سریع محیطی ایزوله می‌دهند.</p>
-            <div className="nb-empty-actions">
-              <button className="nb-new-btn" {...soonProps}>
-                <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
-                ساخت اولین نوت‌بوک
-              </button>
-              <a className="nb-empty-link" href="#/help">مشاهده آموزش‌ها ←</a>
-            </div>
+            <div className="nb-empty-actions"><button className="nb-new-btn" onClick={() => setCreate(true)} disabled={!opts}>ساخت اولین نوت‌بوک</button></div>
           </div>
         )}
+        {!isLoading && raw.length > 0 && list.length === 0 && <div className="nb-empty-state"><h3>نتیجه‌ای یافت نشد</h3></div>}
 
-        {/* empty search */}
-        {!isLoading && raw.length > 0 && list.length === 0 && (
-          <div className="nb-empty-state">
-            <div className="nb-empty-icon" style={{ background: '#f4f7f9', fontSize: 24 }}>🔍</div>
-            <h3>نتیجه‌ای یافت نشد</h3>
-            <p>نوت‌بوکی با نام «{query}» وجود ندارد.</p>
-          </div>
-        )}
-
-        {/* table */}
-        {!isLoading && shown.length > 0 && (
+        {shown.length > 0 && (
           <div className="nb-table-wrap">
             <table className="nb-tbl">
-              <thead>
-                <tr>
-                  <th>نام</th>
-                  <th>وضعیت</th>
-                  <th>ایمیج</th>
-                  <th>ایجاد</th>
-                  <th style={{ width: 80 }}></th>
-                </tr>
-              </thead>
+              <thead><tr>
+                {COLS.map(([k, l]) => (
+                  <th key={k} className={`sortable ${sort.key === k ? sort.dir : ''}`} onClick={() => toggleSort(k)}>{l}{sort.key === k ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>
+                ))}
+                <th style={{ width: 190 }} />
+              </tr></thead>
               <tbody>
                 {shown.map(n => {
-                  const name = n.name || n.id
-                  const isRunning = n.status === 'Running'
-                  const inUse = n.in_use_by
+                  const running = n.status === 'Running'
+                  const transitional = ['Pending', 'Stopping', 'Terminating'].includes(n.status)
+                  const b = busy === n.name
                   return (
-                    <tr key={name}>
-                      <td>
-                        <div className="nb-name">{name}</div>
-                      </td>
-                      <td title={n.phase_message}><StatusBadge status={n.status} /></td>
-                      <td>
-                        <div className="nb-image-cell" title={n.image}>
-                          <bdi dir="ltr">{n.image?.split('/').pop() || '—'}</bdi>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="nb-date">{fmt.date(n.created_at)}</span>
-                      </td>
+                    <tr key={n.name}>
+                      <td><button className="nb-name nb-linklike" onClick={() => setDetails(n)}><bdi dir="ltr">{n.name}</bdi></button></td>
+                      <td><StatusBadge status={n.status} message={n.phase_message} /></td>
+                      <td><div className="nb-image-cell" title={n.image}><bdi dir="ltr">{n.image.split('/').pop() || '—'}</bdi></div></td>
+                      <td><span className="nb-date" dir="ltr">{n.cpu_limit ?? '—'} CPU · {n.memory_limit ?? '—'}{n.gpu_count ? ` · ${n.gpu_count} GPU` : ''}</span></td>
+                      <td><span className="nb-date">{fmt.date(n.created_at)}</span></td>
                       <td>
                         <div className="nb-actions">
-                          {isRunning && (
-                            <a href={n.url || '#'} className="nb-action-btn" title="باز کردن">
-                              <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" /></svg>
-                            </a>
-                          )}
-                          <div className="nb-tooltip-wrap">
-                            <button
-                              className="nb-action-btn danger"
-                              {...soonProps}
-                            >
-                              <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
-                            </button>
-                            {inUse && (
-                              <div className="nb-tooltip">در حال استفاده توسط فضای ذخیره‌سازی «{inUse}»</div>
-                            )}
-                          </div>
+                          <button className="nb-action-btn" title="باز کردن" disabled={!running || !n.url} onClick={() => openInApp(n.url, n.name)}><Icon d={I.open} /></button>
+                          <button className="nb-action-btn" title={n.status === 'Stopped' ? 'شروع' : 'توقف'} disabled={b || transitional} onClick={() => startStop(n)}>
+                            <Icon d={n.status === 'Stopped' ? I.start : I.stop} />
+                          </button>
+                          <button className="nb-action-btn" title="جزئیات" onClick={() => setDetails(n)}><Icon d={I.info} /></button>
+                          <button className="nb-action-btn" title="تغییر اندازه" disabled={b || transitional || !opts} onClick={() => setResize(n)}><Icon d={I.resize} /></button>
+                          <button className="nb-action-btn danger" title="حذف" disabled={b || n.status === 'Terminating'} onClick={() => setDel(n)}><Icon d={I.del} /></button>
                         </div>
                       </td>
                     </tr>
@@ -466,12 +156,10 @@ export default function Notebooks() {
                 })}
               </tbody>
             </table>
-
-            {/* pagination */}
             {pages > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', justifyContent: 'flex-end' }}>
+              <div className="nb-pager">
                 <button className="nb-action-btn" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>‹</button>
-                <span style={{ fontSize: 12, color: '#8fa3b8' }}>{page + 1} / {pages}</span>
+                <span>{page + 1} / {pages}</span>
                 <button className="nb-action-btn" onClick={() => setPage(p => Math.min(pages - 1, p + 1))} disabled={page >= pages - 1}>›</button>
               </div>
             )}
@@ -479,31 +167,13 @@ export default function Notebooks() {
         )}
       </div>
 
-      {/* modals */}
-      {openCreate && (
-        <CreateModal
-          opts={opts}
-          quota={quota}
-          onClose={() => setOpenCreate(false)}
-          onCreate={handleCreate}
-        />
-      )}
-      {delTarget && (
-        <DeleteModal
-          notebook={delTarget}
-          onConfirm={handleDelete}
-          onCancel={() => setDelTarget(null)}
-        />
-      )}
-
-      {/* toast */}
-      {toast && (
-        <Toast
-          key={toast.key}
-          msg={toast.msg}
-          onUndo={toast.onUndo}
-          onClose={() => setToast(null)}
-        />
+      {create && <CreateNotebook opts={opts} onClose={() => setCreate(false)} onCreated={() => { setCreate(false); refresh() }} />}
+      {resize && <ResizeNotebook nb={resize} opts={opts} onClose={() => setResize(null)} onDone={() => { setResize(null); refresh() }} />}
+      {details && <NotebookDetails nb={details} onClose={() => setDetails(null)} />}
+      {del && (
+        <ConfirmDialog danger title={`حذف نوت‌بوک «${del.name}»؟`} typeToConfirm={del.name} busy={busy === del.name}
+          body="این کار برگشت‌پذیر نیست. نوت‌بوک و Pod آن حذف می‌شود؛ فضای ذخیره‌سازی workspace باقی می‌ماند و در «فضاهای ذخیره‌سازی» قابل مدیریت است."
+          confirmLabel="حذف" onCancel={() => setDel(null)} onConfirm={doDelete} />
       )}
     </AppShell>
   )
