@@ -1,39 +1,36 @@
-const cache = new Map()
+import React from 'react'
+import { getJson, send, invalidate } from './http.js'
+
+export { invalidate }
 
 export async function api(path, fallback = null) {
-  if (cache.has(path)) return cache.get(path)
-  try {
-    const r = await fetch(path, { headers: { Accept: 'application/json' } })
-    if (!r.ok) throw new Error(String(r.status))
-    const j = await r.json()
-    cache.set(path, j)
-    return j
-  } catch {
-    return fallback
-  }
+  const { data, error } = await getJson(path)
+  return error ? fallback : data
 }
 
-export async function apiPost(path, body) {
-  try {
-    const r = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(body),
-    })
-    return await r.json().catch(() => ({}))
-  } catch {
-    return {}
-  }
+export function apiPost(path, body) {
+  return send(path, { method: 'POST', body })
 }
 
-export function useApi(path, fallback = null, deps = []) {
-  const [state, setState] = React.useState({ data: null, loading: true })
+export function apiSend(path, method, body) {
+  return send(path, { method, body })
+}
+
+const identity = x => x
+
+export function useApi(path, fallback = null, deps = [], adapt = identity) {
+  const [state, setState] = React.useState({ data: fallback, loading: !!path, error: null })
+  const [tick, setTick] = React.useState(0)
   React.useEffect(() => {
+    if (!path) { setState({ data: fallback, loading: false, error: null }); return }
     let alive = true
-    api(path, fallback).then(d => { if (alive) setState({ data: d, loading: false }) })
+    setState(s => ({ ...s, loading: true }))
+    getJson(path).then(({ data, error }) => {
+      if (!alive) return
+      setState({ data: error ? fallback : adapt(data), loading: false, error })
+    })
     return () => { alive = false }
-  }, deps)
-  return state
+  }, [path, tick, ...deps])
+  const reload = React.useCallback(() => { invalidate(path || ''); setTick(t => t + 1) }, [path])
+  return { ...state, reload }
 }
-
-import React from 'react'
