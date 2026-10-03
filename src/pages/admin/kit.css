@@ -102,3 +102,7 @@ tr.gp-kind:hover, tr.gp-kind.on { background: #eef3fb; }
 .unit-card-key { font-weight: 600; margin-bottom: 8px; }
 .unit-card-rows { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 12.5px; margin-top: 10px; color: #56657f; }
 .unit-card-rows b { color: #0c1a33; }
+.ct-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct-chip { display: inline-flex; align-items: center; gap: 6px; background: #eef3fb; color: #1E3A8A; border-radius: 99px; padding: 4px 6px 4px 12px; font-size: 12.5px; }
+.ct-chip button { border: 0; background: #dbe5f5; color: #1E3A8A; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; line-height: 1; }
+.ct-chip button:disabled { opacity: .5; cursor: not-allowed; }

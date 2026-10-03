@@ -1,0 +1,10 @@
+.rg-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(160deg, #0c1a33, #1E3A8A); padding: 16px; box-sizing: border-box; }
+.rg-card { background: #fff; border-radius: 18px; padding: 32px; width: min(480px, 100%); box-shadow: 0 30px 80px -30px rgba(0,0,0,.5); box-sizing: border-box; }
+.rg-card h2 { margin: 12px 0 8px; font-size: 19px; color: #0c1a33; }
+.rg-card p { color: #56657f; font-size: 13.5px; line-height: 1.9; }
+.rg-logo { display: flex; justify-content: center; }
+.rg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.rg-actions a.ak-btn { display: inline-flex; align-items: center; text-decoration: none; }
+.rg-dots { display: flex; gap: 6px; justify-content: center; margin-top: 18px; }
+.rg-dots span { width: 8px; height: 8px; border-radius: 50%; background: #dde5f0; }
+.rg-dots span.on { background: #1E3A8A; }

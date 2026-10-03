@@ -66,6 +66,10 @@ export default function UserWidget() {
               <Icon name="backup" size={15} color="#56657f" />
               <span>بکاپ‌ها</span>
             </a>
+            <a className="uw-item" href="#/manage-users" onClick={close}>
+              <Icon name="group" size={15} color="#56657f" />
+              <span>مدیریت همکاران</span>
+            </a>
             <div className="uw-item" onClick={() => { close(); setPw(true) }}>
               <Icon name="lock" size={15} color="#56657f" />
               <span>تغییر گذرواژه</span>
