@@ -42,7 +42,7 @@ const I = {
 export default function Notebooks() {
   const { data, loading, error, reload } = useApi('/api/notebooks', null, [], adaptNotebooks)
   const { data: opts } = useApi('/api/notebooks/options')
-  const [create, setCreate] = useState(false)
+  const [create, setCreate] = useState(() => window.location.hash.includes('new=1'))
   const [resize, setResize] = useState(null)
   const [details, setDetails] = useState(null)
   const [del, setDel] = useState(null)
@@ -176,7 +176,7 @@ export default function Notebooks() {
         )}
       </div>
 
-      {create && <CreateNotebook opts={opts} onClose={() => setCreate(false)} onCreated={() => { setCreate(false); refresh() }} />}
+      {create && opts && <CreateNotebook opts={opts} onClose={() => setCreate(false)} onCreated={() => { setCreate(false); refresh() }} />}
       {resize && <ResizeNotebook nb={resize} opts={opts} onClose={() => setResize(null)} onDone={() => { setResize(null); refresh() }} />}
       {detailsNb && <NotebookDetails nb={detailsNb} onClose={() => setDetails(null)} />}
       {del && (

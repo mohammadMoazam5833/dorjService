@@ -178,7 +178,7 @@ export default function Volumes() {
   const [createErr, setCreateErr] = useState('')
   const refresh = () => { invalidate('/api/volumes'); invalidate('/api/resource-usage'); reload() }
   const { data: q, error: qErr } = useApi('/api/volumes/quota')
-  const [open, setOpen]   = useState(false)
+  const [open, setOpen]   = useState(() => window.location.hash.includes('new=1'))
   const [name, setName]   = useState('')
   const [size, setSize]   = useState('5')
   const [saving, setSaving] = useState(false)

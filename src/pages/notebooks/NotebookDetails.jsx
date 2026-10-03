@@ -105,6 +105,21 @@ function Ssh({ name }) {
   )
 }
 
+// The notebook console is an SSH session from the backend into the pod (sshd :2222), so it
+// needs the notebook's SSH access enabled first.
+function ConsoleTab({ name, onOpenSsh }) {
+  const { data, error, loading } = useApi(`/api/notebooks/${enc(name)}/ssh/status`)
+  if (loading) return <p className="nb-fhint">در حال بررسی…</p>
+  if (error) return <ErrorNote error={error} />
+  if (!data?.enabled) return (
+    <>
+      <p className="cd-body">کنسول از طریق دسترسی SSH داخلی نوت‌بوک کار می‌کند و این دسترسی هنوز فعال نیست. پس از فعال‌سازی، نوت‌بوک یک‌بار دوباره راه‌اندازی می‌شود.</p>
+      <button className="cd-btn cd-primary" onClick={onOpenSsh}>رفتن به تب SSH</button>
+    </>
+  )
+  return <Suspense fallback={<p className="nb-fhint">در حال بارگذاری کنسول…</p>}><Terminal path={`/ws/notebook-console/${enc(name)}`} /></Suspense>
+}
+
 export default function NotebookDetails({ nb, onClose }) {
   const [tab, setTab] = useState('overview')
   const running = nb.status === 'Running'
@@ -127,7 +142,7 @@ export default function NotebookDetails({ nb, onClose }) {
           {tab === 'logs' && <Logs name={nb.name} />}
           {tab === 'yaml' && <Yaml name={nb.name} />}
           {tab === 'ssh' && <Ssh name={nb.name} />}
-          {tab === 'console' && running && <Suspense fallback={<p className="nb-fhint">در حال بارگذاری کنسول…</p>}><Terminal path={`/ws/notebook-console/${enc(nb.name)}`} /></Suspense>}
+          {tab === 'console' && running && <ConsoleTab name={nb.name} onOpenSsh={() => setTab('ssh')} />}
         </div>
       </aside>
     </>

@@ -31,8 +31,14 @@ export default function Terminal({ path }) {
     const ws = new WebSocket(wsUrl(path))
     ws.onopen = () => { setState('open'); term.focus() }
     ws.onmessage = ev => term.write(typeof ev.data === 'string' ? ev.data : new Uint8Array(ev.data))
-    ws.onclose = () => {
+    ws.onclose = ev => {
       if (closedByUs) return
+      // a close reason means the server refused (SSH off, pod not running, ...) - retrying won't help
+      if (ev.reason) {
+        setState('closed')
+        term.write(`\r\n\x1b[31m[${ev.reason}]\x1b[0m\r\n`)
+        return
+      }
       if (attempt < MAX_RETRIES) {
         term.write(`\r\n\x1b[33m[اتصال قطع شد؛ تلاش دوباره ${attempt + 1}/${MAX_RETRIES}…]\x1b[0m\r\n`)
         retryTimer = setTimeout(() => setAttempt(a => a + 1), 2000)
