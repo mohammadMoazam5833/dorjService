@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useApi, apiPost, invalidate } from '../../lib/api.js'
 import { fmt } from '../../lib/format.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
@@ -108,9 +108,17 @@ function Ssh({ name }) {
 // The notebook console is an SSH session from the backend into the pod (sshd :2222), so it
 // needs the notebook's SSH access enabled first.
 function ConsoleTab({ name, onOpenSsh }) {
-  const { data, error, loading } = useApi(`/api/notebooks/${enc(name)}/ssh/status`)
-  if (loading) return <p className="nb-fhint">در حال بررسی…</p>
+  const { data, error, loading, reload } = useApi(`/api/notebooks/${enc(name)}/ssh/status`)
+  // just enabled: the key only reaches the pod after its restart (sidecar_active)
+  const pending = data?.enabled && !data?.sidecar_active
+  useEffect(() => {
+    if (!pending) return
+    const t = setInterval(() => { invalidate(`/api/notebooks/${enc(name)}/ssh`); reload() }, 5000)
+    return () => clearInterval(t)
+  }, [pending, name, reload])
+  if (loading && !data) return <p className="nb-fhint">در حال بررسی…</p>
   if (error) return <ErrorNote error={error} />
+  if (pending) return <p className="cd-body">SSH فعال شد؛ منتظر راه‌اندازی دوباره‌ی نوت‌بوک هستیم تا کنسول در دسترس شود…</p>
   if (!data?.enabled) return (
     <>
       <p className="cd-body">کنسول از طریق دسترسی SSH داخلی نوت‌بوک کار می‌کند و این دسترسی هنوز فعال نیست. پس از فعال‌سازی، نوت‌بوک یک‌بار دوباره راه‌اندازی می‌شود.</p>
