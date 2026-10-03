@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import AppShell from '../components/AppShell.jsx'
-import { useApi, apiSend, invalidate } from '../lib/api.js'
+import { useApi, apiSend, apiPost, invalidate } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
 import { adaptNotebooks } from '../lib/adapters/workloads.js'
 import { notifySuccess, notifyError } from '../lib/notify.js'
@@ -90,6 +90,9 @@ export default function Notebooks() {
     const r = await apiSend(`/api/notebooks/${enc(n.name)}`, 'DELETE')
     setBusy(''); setDel(null)
     if (r.error) { notifyError(r.error.message); return }
+    // DELETE leaves the notebook's SSH Service/PodDefault/key behind; ssh/disable removes them
+    // (its final StatefulSet patch 404s once the notebook is gone - expected, ignored)
+    await apiPost(`/api/notebooks/${enc(n.name)}/ssh/disable`, {})
     notifySuccess(`نوت‌بوک «${n.name}» حذف شد`)
     refresh(); invalidate('/api/volumes')
   }

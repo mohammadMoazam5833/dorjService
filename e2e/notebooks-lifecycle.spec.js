@@ -89,6 +89,9 @@ test('notebook lifecycle through the UI', async ({ page }) => {
   await page.locator('.cd-modal .cd-danger').click()
   await waitPhase(page, 'gone')
 
+  // deleting through the UI also removes the notebook's SSH service
+  await expect.poll(async () => (await api(page, `/api/notebooks/${NB}/ssh/status`)).json?.enabled ?? false, { timeout: 30_000 }).toBe(false)
+
   // cleanup: the workspace volume the notebook created
   const vols = (await api(page, '/api/volumes')).json || []
   for (const v of vols.filter(v => v.name.startsWith(NB))) {
