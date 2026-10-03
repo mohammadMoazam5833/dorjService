@@ -3,6 +3,7 @@ import { apiSend, apiPost } from '../../lib/api.js'
 import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { Field, Err, useTable } from './kit.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 const B = '/admin-panel/api/admin'
 const fresh = p => getJson(`${p}${p.includes('?') ? '&' : '?'}t=${Date.now()}`, { ttlMs: 0 }).then(r => r.data)
@@ -28,7 +29,7 @@ function Pricing() {
   const s = useSaver()
   useEffect(() => { fresh(`${B}/settings`).then(d => setF({ rate_mode: d?.rate_mode || 'manual', usd_to_irr_rate: d?.usd_to_irr_rate || '', price_cpu_core_hour: d?.price_cpu_core_hour || '',
     price_mem_gib_hour: d?.price_mem_gib_hour || '', price_gpu_vram_gib_hour: d?.price_gpu_vram_gib_hour || '', price_backup_gib: d?.price_backup_gib || '', sla_tier_warning_days: d?.sla_tier_warning_days || '' })) }, [])
-  if (!f) return <p className="ak-muted">در حال بارگذاری…</p>
+  if (!f) return <Loading />
   const set = k => v => setF(x => ({ ...x, [k]: v }))
   return (
     <div className="ak-card">
@@ -56,7 +57,7 @@ function Smtp() {
   const s = useSaver()
   useEffect(() => { fresh('/admin-panel/api/smtp-settings').then(d => setF({ host: d?.host || '', port: d?.port || '', from: d?.from || '', fromDisplayName: d?.fromDisplayName || '',
     starttls: !!d?.starttls, ssl: !!d?.ssl, auth: !!d?.auth, user: d?.user || '', password: '' })) }, [])
-  if (!f) return <p className="ak-muted">در حال بارگذاری…</p>
+  if (!f) return <Loading />
   const set = k => e => setF(x => ({ ...x, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
   return (
     <div className="ak-card">
@@ -89,7 +90,7 @@ function LoginNote() {
   const [f, setF] = useState(null)
   const s = useSaver()
   useEffect(() => { fresh(`${B}/login-note`).then(d => setF({ enabled: d?.enabled !== false, note_fa: d?.note_fa || '', note_en: d?.note_en || '' })) }, [])
-  if (!f) return <p className="ak-muted">در حال بارگذاری…</p>
+  if (!f) return <Loading />
   return (
     <div className="ak-card">
       <h2>پیام صفحه‌ی ورود</h2>
@@ -106,7 +107,7 @@ function Ad() {
   const [on, setOn] = useState(null)
   const s = useSaver()
   useEffect(() => { fresh(`${B}/ad-sync`).then(d => setOn(!!d?.enabled)) }, [])
-  if (on === null) return <p className="ak-muted">در حال بارگذاری…</p>
+  if (on === null) return <Loading />
   const toggle = async v => { setOn(v); if (!(await s.run(`${B}/ad-sync`, 'PUT', { enabled: v }, 'تنظیم همگام‌سازی AD ذخیره شد'))) setOn(!v) }
   return (
     <div className="ak-card">
@@ -122,7 +123,7 @@ function Session() {
   const [f, setF] = useState(null)
   const s = useSaver()
   useEffect(() => { fresh('/admin-panel/api/session-settings').then(d => setF({ enabled: !!d?.enabled, max: String(d?.maxSessions || 1) })) }, [])
-  if (!f) return <p className="ak-muted">در حال بارگذاری…</p>
+  if (!f) return <Loading />
   return (
     <div className="ak-card">
       <h2>نشست‌های هم‌زمان</h2>
@@ -140,7 +141,7 @@ function Uploads() {
   const s = useSaver()
   useEffect(() => { fresh(`${B}/upload-policy`).then(d => setF({ upload_enabled: d?.upload_enabled !== false, download_enabled: d?.download_enabled !== false,
     upload_max_size_mb: d?.upload_max_size_mb || '', upload_allowed_extensions: d?.upload_allowed_extensions || '' })) }, [])
-  if (!f) return <p className="ak-muted">در حال بارگذاری…</p>
+  if (!f) return <Loading />
   return (
     <div className="ak-card">
       <h2>آپلود/دانلود فایل در فضاهای ذخیره‌سازی</h2>
@@ -165,7 +166,7 @@ function FailedLogins() {
     <div className="ak-card">
       <div className="ak-toolbar"><h2 style={{ margin: 0 }}>تلاش‌های ناموفق ورود</h2><div className="spacer" />{t.search('جستجوی IP، برنامه یا خطا…')}</div>
       <p className="ak-muted">نمای فقط‌خواندنی رویدادهای خطای ورود Keycloak (۷ روز نگه‌داری). Keycloak برای گذرواژه‌ی اشتباه نام کاربری را ثبت نمی‌کند.</p>
-      {!rows ? <p className="ak-muted">در حال بارگذاری…</p> : rows.length === 0 ? <p className="ak-muted">ورود ناموفقی ثبت نشده است.</p> : (
+      {!rows ? <Loading /> : rows.length === 0 ? <p className="ak-muted">ورود ناموفقی ثبت نشده است.</p> : (
         <div className="ak-table-scroll">
           <table className="ak-table"><thead><tr>{t.th('time', 'زمان')}{t.th('username', 'نام کاربری')}{t.th('ip_address', 'آدرس IP')}{t.th('client_id', 'برنامه')}{t.th('error', 'خطا')}</tr></thead>
             <tbody>{t.shown.map((e, i) => (

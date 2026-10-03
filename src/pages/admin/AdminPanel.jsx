@@ -20,6 +20,7 @@ import Security from './Security.jsx'
 import { visibleTabs } from '../../lib/admin/units.js'
 import { useWhoami } from './kit.jsx'
 import './AdminPanel.css'
+import Spinner from '../../components/Spinner.jsx'
 
 // Same tab ids and order as the platform's admin-panel-view (PANEL_TABS + UNIT_TABS);
 // which ones a viewer gets comes from whoami via visibleTabs().
@@ -86,7 +87,7 @@ export default function AdminPanel() {
   const page = allowed && (allowed.includes(picked) ? picked : allowed[0])
   const setPage = setPicked
 
-  if (!who) return <AppShell active=""><p style={{ padding: 24 }}>در حال بارگذاری…</p></AppShell>
+  if (!who) return <AppShell active=""><p style={{ padding: 24 }}><Spinner label="در حال بارگذاری" text /></p></AppShell>
   if (!allowed.length) {
     return (
       <AppShell active="">

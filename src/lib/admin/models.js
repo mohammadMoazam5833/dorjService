@@ -1,7 +1,7 @@
 // Model catalogue rules, ported from the platform's admin-panel-models.js.
 export const STATUS_LABELS = {
-  not_downloaded: 'دانلود نشده', downloading: 'در حال دانلود…', download_paused: 'دانلود متوقف شده', download_failed: 'دانلود ناموفق',
-  downloaded: 'دانلود شده', copying: 'در حال آماده‌سازی…', copy_paused: 'آماده‌سازی متوقف شده', deploying: 'در حال استقرار…', serving: 'در حال سرویس‌دهی',
+  not_downloaded: 'دانلود نشده', downloading: 'در حال دانلود', download_paused: 'دانلود متوقف شده', download_failed: 'دانلود ناموفق',
+  downloaded: 'دانلود شده', copying: 'در حال آماده‌سازی', copy_paused: 'آماده‌سازی متوقف شده', deploying: 'در حال استقرار', serving: 'در حال سرویس‌دهی',
 }
 const PAUSABLE = new Set(['downloading', 'copying'])
 const RESUMABLE = new Set(['download_paused', 'copy_paused'])

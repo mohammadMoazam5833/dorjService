@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { Modal, Field, Err, Pill, useCaptcha, downloadBlob, rawSend } from './kit.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 const enc = encodeURIComponent
 const P = '/admin-panel/api/admin/profiles'
@@ -71,10 +72,10 @@ export default function Offboard({ profile, onClose, onDone }) {
   return (
     <Modal title={<>خروج کاربر (Offboard): <bdi dir="ltr">{profile}</bdi></>} onClose={onClose} busy={busy}
       actions={
-        stage === 'confirm' ? <>{close}<button className="ak-btn ak-primary" disabled={busy || !password || !cap.answer} onClick={prepare}>{busy ? 'در حال آماده‌سازی…' : 'آماده‌سازی خروجی'}</button></>
+        stage === 'confirm' ? <>{close}<button className="ak-btn ak-primary" disabled={busy || !password || !cap.answer} onClick={prepare}>{busy ? <Spinner label="در حال آماده‌سازی" /> : 'آماده‌سازی خروجی'}</button></>
         : stage === 'prepared' ? <>{close}<button className="ak-btn" onClick={download} disabled={!dlPassword}>دانلود خروجی</button>
             <button className="ak-btn ak-danger" disabled={!exp.downloaded} onClick={() => toDelete()}>ادامه به حذف</button></>
-        : stage === 'delete' ? <>{close}<button className="ak-btn ak-danger" disabled={busy || !delPassword || !delCap.answer} onClick={remove}>{busy ? 'در حال حذف…' : 'حذف دائمی'}</button></>
+        : stage === 'delete' ? <>{close}<button className="ak-btn ak-danger" disabled={busy || !delPassword || !delCap.answer} onClick={remove}>{busy ? <Spinner label="در حال حذف" /> : 'حذف دائمی'}</button></>
         : close}>
       {stage === 'confirm' && (
         <>

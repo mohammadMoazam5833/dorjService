@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './ConfirmDialog.css'
+import Spinner from './Spinner.jsx'
 
 // In-app replacement for window.confirm; typeToConfirm makes the user type the name.
 export default function ConfirmDialog({ title, body, confirmLabel = 'تأیید', danger, typeToConfirm, busy, onConfirm, onCancel }) {
@@ -21,7 +22,7 @@ export default function ConfirmDialog({ title, body, confirmLabel = 'تأیید'
         <div className="cd-actions">
           <button className="cd-btn" onClick={onCancel} disabled={busy}>انصراف</button>
           <button className={`cd-btn ${danger ? 'cd-danger' : 'cd-primary'}`} onClick={onConfirm} disabled={!ok || busy}>
-            {busy ? 'در حال انجام…' : confirmLabel}
+            {busy ? <Spinner label="در حال انجام" /> : confirmLabel}
           </button>
         </div>
       </div>

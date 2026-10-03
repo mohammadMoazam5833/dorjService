@@ -3,6 +3,7 @@ import { apiPost, useApi, invalidate } from '../../lib/api.js'
 import { adaptVolumes } from '../../lib/adapters/workloads.js'
 import { createPayload, validName } from '../../lib/notebookApi.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
+import Spinner from '../../components/Spinner.jsx'
 
 // Form shortcuts only; real limits come from the namespace quota (/api/notebooks/options).
 const PRESETS = [
@@ -168,7 +169,7 @@ export default function CreateNotebook({ opts, onClose, onCreated }) {
         </div>
         <div className="nb-modal-foot">
           <button className="nb-btn-cancel" onClick={onClose} disabled={saving}>انصراف</button>
-          <button className="nb-btn-create" onClick={submit} disabled={!canCreate}>{saving ? 'در حال ایجاد…' : 'ایجاد نوت‌بوک'}</button>
+          <button className="nb-btn-create" onClick={submit} disabled={!canCreate}>{saving ? <Spinner label="در حال ایجاد" /> : 'ایجاد نوت‌بوک'}</button>
         </div>
       </div>
     </>

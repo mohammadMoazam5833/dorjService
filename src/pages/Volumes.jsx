@@ -12,6 +12,7 @@ import { relativeUrl } from '../lib/adapters/workloads.js'
 import { notifySuccess, notifyError } from '../lib/notify.js'
 import { invalidate } from '../lib/api.js'
 import './Volumes.css'
+import Spinner from '../components/Spinner.jsx'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const STATUS_MAP = {
@@ -42,7 +43,7 @@ function UsageBar({ used, total }) {
         <span>{total} GiB</span>
       </div>
       <div className="vl-ubar">
-        <div className="vl-ufill" style={{ width: `${pct}%` }} />
+        <div className={`vl-ufill ${cls}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
@@ -241,8 +242,9 @@ export default function Volumes() {
   const storageRem = q?.quota?.storage_remaining_gib ?? null
   const showCol = k => visible.includes(k)
 
-  const SortTh = ({ col, children }) => (
-    <th {...thProps(col)}>
+  // plain render helper, not a component: a component declared in render remounts every render
+  const sortTh = (col, children) => (
+    <th key={col} {...thProps(col)}>
       {children}
       <span className="vl-sort-icon" />
     </th>
@@ -322,9 +324,9 @@ export default function Volumes() {
             <table className="vl-tbl">
               <thead>
                 <tr>
-                  <SortTh col="name">نام</SortTh>
-                  <SortTh col="used_gib">حجم / مصرف</SortTh>
-                  <SortTh col="status">وضعیت</SortTh>
+                  {sortTh('name', 'نام')}
+                  {sortTh('used_gib', 'حجم / مصرف')}
+                  {sortTh('status', 'وضعیت')}
                   {showCol('inuse')  && <th>در استفاده توسط</th>}
                   {showCol('resize') && <th>تغییر اندازه خودکار</th>}
                   {showCol('shared') && <th>نوع دسترسی</th>}
@@ -421,7 +423,7 @@ export default function Volumes() {
             <div className="vl-modal-actions">
               <button className="vl-btn-cancel" onClick={() => setOpen(false)}>انصراف</button>
               <button className="vl-btn-create" onClick={create} disabled={saving || !name.trim() || Number(size) <= 0}>
-                {saving ? 'در حال ایجاد…' : 'ایجاد'}
+                {saving ? <Spinner label="در حال ایجاد" /> : 'ایجاد'}
               </button>
             </div>
           </div>
@@ -529,8 +531,8 @@ export function Vms() {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortKey(key); setSortDir('asc') }
   }
-  const SortTh = ({ col, children }) => (
-    <th className={`sortable ${sortKey === col ? sortDir : ''}`} onClick={() => toggleSort(col)}>
+  const sortTh = (col, children) => (
+    <th key={col} className={`sortable ${sortKey === col ? sortDir : ''}`} onClick={() => toggleSort(col)}>
       {children}<span className="vl-sort-icon" />
     </th>
   )
@@ -568,7 +570,7 @@ export function Vms() {
           <span className="vl-count">{list.length} ماشین مجازی</span>
         </div>
 
-        {loading && <div style={{ padding:24, color:'#8fa3b8', fontSize:13 }}>در حال بارگذاری…</div>}
+        {loading && <div style={{ padding:24, color:'#8fa3b8', fontSize:13 }}><Spinner label="در حال بارگذاری" text /></div>}
 
         {!loading && shown.length === 0 && (
           <div className="vl-empty">
@@ -583,12 +585,12 @@ export function Vms() {
             <table className="vl-tbl">
               <thead>
                 <tr>
-                  <SortTh col="name">نام</SortTh>
-                  <SortTh col="status">وضعیت</SortTh>
+                  {sortTh('name', 'نام')}
+                  {sortTh('status', 'وضعیت')}
                   <th>CPU</th>
                   <th>حافظه</th>
                   <th>IP</th>
-                  <SortTh col="created_at">ایجاد</SortTh>
+                  {sortTh('created_at', 'ایجاد')}
                   <th className="vl-menu-cell" />
                 </tr>
               </thead>

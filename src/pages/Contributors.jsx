@@ -6,6 +6,7 @@ import { notifySuccess, notifyError } from '../lib/notify.js'
 import { roleBreakdown, isEmail } from '../lib/workgroup.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { Err, useTable } from './admin/kit.jsx'
+import { Loading } from '../components/Spinner.jsx'
 
 // Port of the platform's manage-users view: account info, profile memberships, contributors of
 // every owned profile (add/remove by email) and, for cluster admins, all profiles with owners.
@@ -42,7 +43,7 @@ function OwnedContributors({ ns }) {
     <div className="ak-card">
       <h2>همکاران <bdi dir="ltr"><code>{ns}</code></bdi></h2>
       <p className="ak-muted">همکاران به منابع این فضای کاری (نوت‌بوک‌ها، pipelineها و…) دسترسی ویرایش دارند.</p>
-      {!list && !err && <p className="ak-muted">در حال بارگذاری…</p>}
+      {!list && !err && <Loading />}
       {list && (
         <div className="ct-chips">
           {!list.length && <span className="ak-muted">هنوز همکاری اضافه نشده است.</span>}
@@ -69,7 +70,7 @@ function AllProfiles() {
     <div className="ak-card">
       <h2>نمای کلی پروفایل‌ها (مدیر خوشه)</h2>
       <Err>{err}</Err>
-      {!rows && !err ? <p className="ak-muted">در حال بارگذاری…</p> : <>
+      {!rows && !err ? <Loading /> : <>
         <div className="ak-toolbar">{t.search()}</div>
         <div className="ak-table-scroll"><table className="ak-table" dir="ltr"><thead><tr>{t.th('namespace', 'Namespace')}{t.th('owner', 'Owner')}{t.th('contributors', 'Contributors')}</tr></thead>
           <tbody>{t.shown.map(r => <tr key={r.namespace}><td>{r.namespace}</td><td>{r.owner || '—'}</td><td className="sec-wrap">{r.contributors || '—'}</td></tr>)}</tbody></table></div>
@@ -90,7 +91,7 @@ export default function Contributors() {
       <div className="ak-card">
         <h2>اطلاعات حساب</h2>
         <Err>{err}</Err>
-        {!env && !err && <p className="ak-muted">در حال بارگذاری…</p>}
+        {!env && !err && <Loading />}
         {env && <>
           <p className="ak-kv"><b>کاربر:</b><bdi dir="ltr">{env.user}</bdi>{env.isClusterAdmin && <span className="ak-pill warn">مدیر خوشه</span>}</p>
           <h3>عضویت در پروفایل‌ها</h3>

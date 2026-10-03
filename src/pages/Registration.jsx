@@ -6,6 +6,7 @@ import { LOGOUT_URL } from '../lib/session.js'
 import { Err, Field } from './admin/kit.jsx'
 import Logo from '../components/Logo.jsx'
 import './Registration.css'
+import Spinner from '../components/Spinner.jsx'
 
 // Shown to a signed-in user who has no workspace (Profile) yet. With REGISTRATION_FLOW on, they
 // create one (POST /api/workgroup/create, then poll /exists like the platform); otherwise profiles
@@ -52,7 +53,7 @@ export default function Registration({ status, onDone }) {
           <Err>{err}</Err>
           <div className="rg-actions">
             <button className="ak-btn" onClick={() => setStep(0)} disabled={busy}>بازگشت</button>
-            <button className="ak-btn ak-primary" onClick={finish} disabled={busy}>{busy ? 'در حال ساخت…' : 'پایان'}</button>
+            <button className="ak-btn ak-primary" onClick={finish} disabled={busy}>{busy ? <Spinner label="در حال ساخت" /> : 'پایان'}</button>
           </div>
         </>}
         {status.registrationFlowAllowed && <div className="rg-dots">{[0, 1].map(i => <span key={i} className={step === i ? 'on' : ''} />)}</div>}

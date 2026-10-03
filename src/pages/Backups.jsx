@@ -6,6 +6,7 @@ import { notifySuccess, notifyError } from '../lib/notify.js'
 import ErrorNote from '../components/ErrorNote.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import './Notebooks.css'
+import Spinner from '../components/Spinner.jsx'
 
 const enc = encodeURIComponent
 const PHASE = { New: 'در صف', InProgress: 'در حال انجام', Completed: 'کامل', PartiallyFailed: 'ناقص', Failed: 'ناموفق', Deleting: 'در حال حذف', FailedValidation: 'نامعتبر' }
@@ -74,8 +75,8 @@ function RestoreDialog({ backup, onClose, onDone }) {
         <div className="cd-actions">
           <button className="cd-btn" onClick={onClose} disabled={busy}>انصراف</button>
           {step === 'confirm'
-            ? <button className="cd-btn cd-primary" onClick={() => run(false)} disabled={busy}>{busy ? 'در حال بررسی…' : 'بازیابی'}</button>
-            : <button className="cd-btn cd-danger" onClick={() => run(true)} disabled={busy || !password || answer === ''}>{busy ? 'در حال بازیابی…' : 'بازیابی اجباری'}</button>}
+            ? <button className="cd-btn cd-primary" onClick={() => run(false)} disabled={busy}>{busy ? <Spinner label="در حال بررسی" /> : 'بازیابی'}</button>
+            : <button className="cd-btn cd-danger" onClick={() => run(true)} disabled={busy || !password || answer === ''}>{busy ? <Spinner label="در حال بازیابی" /> : 'بازیابی اجباری'}</button>}
         </div>
       </div>
     </>
@@ -146,13 +147,13 @@ export default function Backups() {
         <div className="nb-title-row"><h1>بکاپ‌ها</h1></div>
         <div className="nb-bar">
           <input className="nb-search-input" style={{ maxWidth: 360 }} placeholder="توضیح بکاپ جدید (اختیاری)" maxLength={200} value={desc} onChange={e => setDesc(e.target.value)} />
-          <button className="nb-new-btn" onClick={create} disabled={creating}>{creating ? 'در حال ایجاد…' : 'بکاپ جدید'}</button>
+          <button className="nb-new-btn" onClick={create} disabled={creating}>{creating ? <Spinner label="در حال ایجاد" /> : 'بکاپ جدید'}</button>
           <div className="spacer" />
           <input className="nb-search-input" style={{ maxWidth: 240 }} placeholder="جستجو…" value={query} onChange={e => { setQuery(e.target.value); b.resetPage() }} />
         </div>
         <p className="nb-fhint" style={{ padding: '0 24px' }}>بکاپ از همه‌ی فضاهای ذخیره‌سازی Namespace شما گرفته می‌شود و ۳۰ روز نگه‌داری می‌شود.</p>
         <ErrorNote error={error} />
-        {loading && !error && <p className="nb-fhint" style={{ padding: 24 }}>در حال بارگذاری…</p>}
+        {loading && !error && <p className="nb-fhint" style={{ padding: 24 }}><Spinner label="در حال بارگذاری" text /></p>}
         {!loading && !error && backups.length === 0 && <div className="nb-empty-state"><h3>هنوز بکاپی ندارید</h3></div>}
         {b.shown.length > 0 && (
           <div className="nb-table-wrap">
@@ -168,7 +169,7 @@ export default function Backups() {
                   <td dir="auto">{x.description || '—'}</td>
                   <td><div className="nb-actions">
                     <button className="cd-btn" disabled={x.phase !== 'Completed' || !!busy} onClick={() => setRestore(x)}>بازیابی</button>
-                    <button className="cd-btn" disabled={x.phase !== 'Completed' || !!busy} onClick={() => download(x)}>{busy === x.name ? '…' : 'دانلود'}</button>
+                    <button className="cd-btn" disabled={x.phase !== 'Completed' || !!busy} onClick={() => download(x)}>{busy === x.name ? <Spinner label="در حال دانلود" /> : 'دانلود'}</button>
                     <button className="cd-btn" disabled={!!busy} onClick={() => setDel(x)}>{DONE.has(x.phase) ? 'حذف' : 'لغو'}</button>
                   </div></td>
                 </tr>

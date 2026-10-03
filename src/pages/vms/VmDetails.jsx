@@ -5,6 +5,7 @@ import { fmt } from '../../lib/format.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import ErrorNote from '../../components/ErrorNote.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 const Terminal = lazy(() => import('../../components/Terminal.jsx'))
 const enc = encodeURIComponent
@@ -34,7 +35,7 @@ function Overview({ name, data, reload }) {
       <h4 className="nd-h">اتصال SSH</h4>
       {data.ssh_info ? <code className="nd-code" dir="ltr">{data.ssh_info}</code> : <p className="nb-fhint">دسترسی SSH برای این ماشین مجازی تنظیم نشده است.</p>}
       <p className="nb-fhint">آدرس IP بالا فقط درون شبکه‌ی کلاستر معتبر است؛ برای اتصال از بیرون از دستور SSH یا کنسول استفاده کنید.</p>
-      <div className="nd-toolbar"><button className="cd-btn" disabled={busy} onClick={() => setConfirm(true)}>{busy ? 'در حال ساخت…' : 'ساخت کلید SSH جدید'}</button></div>
+      <div className="nd-toolbar"><button className="cd-btn" disabled={busy} onClick={() => setConfirm(true)}>{busy ? <Spinner label="در حال ساخت" /> : 'ساخت کلید SSH جدید'}</button></div>
       {confirm && <ConfirmDialog title="ساخت کلید SSH جدید؟" body="کلید قبلی از کار می‌افتد و ماشین مجازی دوباره راه‌اندازی می‌شود."
         confirmLabel="کلید جدید بساز" onCancel={() => setConfirm(false)} onConfirm={regen} />}
     </>
@@ -61,7 +62,7 @@ function Volumes({ name, data, reload }) {
       {attached.length === 0 ? <p className="nb-fhint">هیچ فضای ذخیره‌سازی‌ای به این ماشین مجازی متصل نیست.</p> : (
         <table className="nd-kv"><tbody>{attached.map(a => (
           <tr key={a.name}><th><bdi dir="ltr">{a.name}</bdi></th><td><code dir="ltr">{a.mount_point}</code>{' '}
-            <button className="cd-btn" disabled={!!busy} onClick={() => call('detach-volume', a.name, { volume: a.name }, `«${a.name}» جدا شد`)}>{busy === a.name ? '…' : 'جدا کردن'}</button></td></tr>
+            <button className="cd-btn" disabled={!!busy} onClick={() => call('detach-volume', a.name, { volume: a.name }, `«${a.name}» جدا شد`)}>{busy === a.name ? <Spinner label="در حال جدا کردن" /> : 'جدا کردن'}</button></td></tr>
         ))}</tbody></table>
       )}
       <h4 className="nd-h">اتصال فضای ذخیره‌سازی</h4>
@@ -72,7 +73,7 @@ function Volumes({ name, data, reload }) {
             {candidates.map(v => <option key={v.name} value={v.name}>{v.name} ({v.size})</option>)}
           </select>
           <label className="nb-fhint"><input type="checkbox" checked={readonly} onChange={e => setReadonly(e.target.checked)} /> فقط‌خواندنی</label>
-          <button className="cd-btn cd-primary" disabled={!pick || !!busy} onClick={() => call('attach-volume', pick, { volume: pick, readonly }, `«${pick}» متصل شد`)}>{busy ? 'در حال اتصال…' : 'اتصال'}</button>
+          <button className="cd-btn cd-primary" disabled={!pick || !!busy} onClick={() => call('attach-volume', pick, { volume: pick, readonly }, `«${pick}» متصل شد`)}>{busy ? <Spinner label="در حال اتصال" /> : 'اتصال'}</button>
         </div>
       )}
     </>
@@ -81,7 +82,7 @@ function Volumes({ name, data, reload }) {
 
 function Yaml({ name }) {
   const { data, error, loading } = useApi(`/api/vms/${enc(name)}/yaml`)
-  return error ? <ErrorNote error={error} /> : <pre className="nd-pre" dir="ltr">{loading ? '…' : data?.yaml}</pre>
+  return error ? <ErrorNote error={error} /> : loading ? <Loading /> : <pre className="nd-pre" dir="ltr">{data?.yaml}</pre>
 }
 
 export default function VmDetails({ vm, onClose }) {
@@ -101,12 +102,12 @@ export default function VmDetails({ vm, onClose }) {
         </nav>
         <div className="nd-body">
           {error && <ErrorNote error={error} />}
-          {loading && !data && <p className="nb-fhint">در حال بارگذاری…</p>}
+          {loading && !data && <p className="nb-fhint"><Spinner label="در حال بارگذاری" text /></p>}
           {data && tab === 'overview' && <Overview name={vm.name} data={data} reload={reload} />}
           {data && tab === 'volumes' && <Volumes name={vm.name} data={data} reload={reload} />}
           {tab === 'yaml' && <Yaml name={vm.name} />}
           {tab === 'console' && running && (
-            <Suspense fallback={<p className="nb-fhint">در حال بارگذاری کنسول…</p>}><Terminal path={`/ws/vm-console/${enc(vm.name)}`} /></Suspense>
+            <Suspense fallback={<p className="nb-fhint"><Spinner label="در حال بارگذاری کنسول" text /></p>}><Terminal path={`/ws/vm-console/${enc(vm.name)}`} /></Suspense>
           )}
         </div>
       </aside>

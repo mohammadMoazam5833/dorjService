@@ -4,6 +4,7 @@ import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { Field, Err, Modal, useTable } from './kit.jsx'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 const B = '/admin-panel/api/admin'
 const fresh = p => getJson(`${p}?t=${Date.now()}`, { ttlMs: 0 }).then(r => r.data)
@@ -88,7 +89,7 @@ function Issue({ models }) {
       <Field label="محدود کردن به مدل‌های مشخص (هیچ‌کدام = دسترسی کامل)"><ModelChecks rows={rows} setRows={setRows} /></Field>
       <Err>{err}</Err>
       {info && <p className="ak-muted">{info}</p>}
-      <button className="ak-btn ak-primary" disabled={busy} onClick={issue}>{busy ? 'در حال صدور…' : 'ساخت و ارسال کلید'}</button>
+      <button className="ak-btn ak-primary" disabled={busy} onClick={issue}>{busy ? <Spinner label="در حال صدور" /> : 'ساخت و ارسال کلید'}</button>
     </div>
   )
 }
@@ -119,7 +120,7 @@ function Keys({ models }) {
   return (
     <div className="ak-card">
       <div className="ak-toolbar"><h2 style={{ margin: 0 }}>کلیدهای صادرشده‌ی LLM</h2><div className="spacer" />{t.search()}</div>
-      {!keys ? <p className="ak-muted">در حال بارگذاری…</p> : (
+      {!keys ? <Loading /> : (
         <div className="ak-table-scroll">
           <table className="ak-table"><thead><tr>{t.th('email', 'ایمیل')}{t.th('key_alias', 'نام کلید')}{t.th('created_at', 'ایجاد')}{t.th('expires_at', 'انقضا')}<th>مدل‌ها</th>{t.th('status', 'وضعیت')}<th /></tr></thead>
             <tbody>{t.shown.map(k => (
@@ -161,7 +162,7 @@ function PortExposure() {
     <div className="ak-card">
       <div className="ak-toolbar"><h2 style={{ margin: 0 }}>درخواست‌های انتشار سرویس</h2><div className="spacer" />{t.search()}</div>
       <p className="ak-muted">تأیید، همان سرویس/پورت را زیر یک مسیر تصادفی و غیرقابل‌حدس روی همین دامنه (پورت ۴۴۳) منتشر می‌کند.</p>
-      {!items ? <p className="ak-muted">در حال بارگذاری…</p> : (
+      {!items ? <Loading /> : (
         <div className="ak-table-scroll">
           <table className="ak-table"><thead><tr>{t.th('namespace', 'Namespace')}{t.th('service_name', 'سرویس')}{t.th('requested_by', 'درخواست‌دهنده')}{t.th('status', 'وضعیت')}<th>آدرس</th><th /></tr></thead>
             <tbody>{t.shown.map(r => (

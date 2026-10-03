@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiSend, invalidate } from '../../lib/api.js'
 import { resizePayload } from '../../lib/notebookApi.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
+import Spinner from '../../components/Spinner.jsx'
 
 const num = q => (q == null ? '' : String(q).replace(/Gi$/, ''))
 
@@ -60,7 +61,7 @@ export default function ResizeNotebook({ nb, opts, onClose, onDone }) {
         {err && <div className="nb-form-err" role="alert" dir="auto">{err}</div>}
         <div className="cd-actions">
           <button className="cd-btn" onClick={onClose} disabled={saving}>انصراف</button>
-          <button className="cd-btn cd-primary" onClick={submit} disabled={!dirty || storageShrink || saving}>{saving ? 'در حال اعمال…' : 'اعمال'}</button>
+          <button className="cd-btn cd-primary" onClick={submit} disabled={!dirty || storageShrink || saving}>{saving ? <Spinner label="در حال اعمال" /> : 'اعمال'}</button>
         </div>
       </div>
     </>

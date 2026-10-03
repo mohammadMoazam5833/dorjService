@@ -7,6 +7,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { useTable, useWhoami, Pill, Err, Modal } from './kit.jsx'
 import OnboardWizard from './OnboardWizard.jsx'
 import Offboard from './Offboard.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 const API = '/admin-panel/api/admin/users'
 
@@ -70,7 +71,7 @@ export default function Users() {
         <button className="ak-btn ak-primary" onClick={() => setOnboard(true)}>+ افزودن کاربر</button>
       </div>
       <ErrorNote error={error} />
-      {loading && !error ? <p className="ak-muted">در حال بارگذاری…</p> : (
+      {loading && !error ? <Loading /> : (
         <div className="ak-table-scroll">
           <table className="ak-table">
             <thead><tr>{t.th('username', 'نام کاربری')}{t.th('email', 'ایمیل')}{t.th('enabled', 'وضعیت')}{t.th('federated', 'منبع')}<th /></tr></thead>

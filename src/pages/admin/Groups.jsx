@@ -6,6 +6,7 @@ import ErrorNote from '../../components/ErrorNote.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { ACCESS_ROLES } from '../../lib/admin/roles.js'
 import { useTable, Field, Err, Modal } from './kit.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 const API = '/admin-panel/api/admin/groups'
 
@@ -35,7 +36,7 @@ function Members({ group, onClose, onSaved }) {
       actions={<><button className="ak-btn" onClick={onClose}>انصراف</button><button className="ak-btn ak-primary" disabled={busy || !users} onClick={save}>ذخیره</button></>}>
       <input className="ak-search" type="search" placeholder="جستجو…" value={q} onChange={e => setQ(e.target.value)} />
       <div style={{ maxHeight: '50vh', overflow: 'auto', marginTop: 8 }}>
-        {!users && !err && <p className="ak-muted">در حال بارگذاری…</p>}
+        {!users && !err && <Loading />}
         {list.map(u => <label key={u.id} className="ak-check"><input type="checkbox" checked={checked.has(u.id)} onChange={() => toggle(u.id)} /><bdi dir="ltr">{u.username} ({u.email})</bdi></label>)}
       </div>
       <Err>{err}</Err>
@@ -89,7 +90,7 @@ export default function Groups() {
       <div className="ak-card">
         <div className="ak-toolbar"><h2 style={{ margin: 0 }}>گروه‌ها</h2><div className="spacer" />{t.search()}</div>
         <ErrorNote error={error} />
-        {loading && !error ? <p className="ak-muted">در حال بارگذاری…</p> : (
+        {loading && !error ? <Loading /> : (
           <div className="ak-table-scroll">
             <table className="ak-table">
               <thead><tr>{t.th('name', 'نام')}{t.th('member_count', 'اعضا')}{ACCESS_ROLES.map(r => <th key={r.id} title={r.label}>{r.short}</th>)}<th /></tr></thead>

@@ -11,6 +11,7 @@ import ResizeNotebook from './notebooks/ResizeNotebook.jsx'
 import NotebookDetails from './notebooks/NotebookDetails.jsx'
 import { openInApp } from './Embed.jsx'
 import './Notebooks.css'
+import Spinner from '../components/Spinner.jsx'
 
 const STATUS = {
   Running:     { cls: 'running', label: 'در حال اجرا' },
@@ -51,7 +52,7 @@ export default function Notebooks() {
   const [sort, setSort] = useState({ key: 'created_at', dir: 'desc' })
   const [page, setPage] = useState(0)
 
-  const raw = Array.isArray(data) ? data : []
+  const raw = useMemo(() => (Array.isArray(data) ? data : []), [data])
   // the drawer follows the live row, not the snapshot taken when it was opened
   const detailsNb = details ? raw.find(n => n.name === details.name) || details : null
   // always keep the list live: fast while anything is between states or erroring (the backend
@@ -119,7 +120,7 @@ export default function Notebooks() {
         </div>
 
         <ErrorNote error={error} />
-        {isLoading && <p className="nb-fhint" style={{ padding: 24 }}>در حال بارگذاری…</p>}
+        {isLoading && <p className="nb-fhint" style={{ padding: 24 }}><Spinner label="در حال بارگذاری" text /></p>}
 
         {!isLoading && !error && raw.length === 0 && (
           <div className="nb-empty-state">

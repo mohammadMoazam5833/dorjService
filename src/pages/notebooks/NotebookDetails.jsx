@@ -4,6 +4,7 @@ import { fmt } from '../../lib/format.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import ErrorNote from '../../components/ErrorNote.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 const TABS = [['overview', 'نمای کلی'], ['logs', 'گزارش‌ها'], ['yaml', 'YAML'], ['ssh', 'SSH'], ['console', 'کنسول']]
 const enc = encodeURIComponent
@@ -12,7 +13,7 @@ const Terminal = lazy(() => import('../../components/Terminal.jsx'))
 
 function Overview({ name }) {
   const { data, error, loading } = useApi(`/api/notebooks/${enc(name)}`)
-  if (loading) return <p className="nb-fhint">در حال بارگذاری…</p>
+  if (loading) return <p className="nb-fhint"><Spinner label="در حال بارگذاری" text /></p>
   if (error) return <ErrorNote error={error} />
   const rows = [
     ['ایمیج', <bdi dir="ltr">{data.image}</bdi>],
@@ -42,14 +43,14 @@ function Logs({ name }) {
   return (
     <>
       <div className="nd-toolbar"><button className="cd-btn" onClick={reload}>تازه‌سازی</button>{data?.pod && <span className="nb-fhint">Pod: <bdi dir="ltr">{data.pod}</bdi></span>}</div>
-      {error ? <ErrorNote error={error} /> : <pre className="nd-pre" dir="ltr">{loading ? '…' : (data?.logs || '(خالی)')}</pre>}
+      {error ? <ErrorNote error={error} /> : loading ? <Loading /> : <pre className="nd-pre" dir="ltr">{data?.logs || '(خالی)'}</pre>}
     </>
   )
 }
 
 function Yaml({ name }) {
   const { data, error, loading } = useApi(`/api/notebooks/${enc(name)}/yaml`)
-  return error ? <ErrorNote error={error} /> : <pre className="nd-pre" dir="ltr">{loading ? '…' : data?.yaml}</pre>
+  return error ? <ErrorNote error={error} /> : loading ? <Loading /> : <pre className="nd-pre" dir="ltr">{data?.yaml}</pre>
 }
 
 function Ssh({ name }) {
@@ -65,14 +66,14 @@ function Ssh({ name }) {
     if (r.error) { notifyError(r.error.message); return }
     invalidate(base); reload(); notifySuccess(okMsg)
   }
-  if (loading) return <p className="nb-fhint">در حال بارگذاری…</p>
+  if (loading) return <p className="nb-fhint"><Spinner label="در حال بارگذاری" text /></p>
   if (error) return <ErrorNote error={error} />
   return (
     <>
       {!data?.enabled ? (
         <>
           <p className="cd-body">دسترسی SSH برای این نوت‌بوک فعال نیست. با فعال‌سازی، یک کلید اختصاصی ساخته می‌شود و نوت‌بوک یک‌بار دوباره راه‌اندازی می‌شود.</p>
-          <button className="cd-btn cd-primary" disabled={!!busy} onClick={() => act('enable', 'SSH فعال شد')}>{busy === 'enable' ? 'در حال فعال‌سازی…' : 'فعال‌سازی SSH'}</button>
+          <button className="cd-btn cd-primary" disabled={!!busy} onClick={() => act('enable', 'SSH فعال شد')}>{busy === 'enable' ? <Spinner label="در حال فعال‌سازی" /> : 'فعال‌سازی SSH'}</button>
         </>
       ) : (
         <>
@@ -116,7 +117,7 @@ function ConsoleTab({ name, onOpenSsh }) {
     const t = setInterval(() => { invalidate(`/api/notebooks/${enc(name)}/ssh`); reload() }, 5000)
     return () => clearInterval(t)
   }, [pending, name, reload])
-  if (loading && !data) return <p className="nb-fhint">در حال بررسی…</p>
+  if (loading && !data) return <p className="nb-fhint"><Spinner label="در حال بررسی" text /></p>
   if (error) return <ErrorNote error={error} />
   if (pending) return <p className="cd-body">SSH فعال شد؛ منتظر راه‌اندازی دوباره‌ی نوت‌بوک هستیم تا کنسول در دسترس شود…</p>
   if (!data?.enabled) return (
@@ -125,7 +126,7 @@ function ConsoleTab({ name, onOpenSsh }) {
       <button className="cd-btn cd-primary" onClick={onOpenSsh}>رفتن به تب SSH</button>
     </>
   )
-  return <Suspense fallback={<p className="nb-fhint">در حال بارگذاری کنسول…</p>}><Terminal path={`/ws/notebook-console/${enc(name)}`} /></Suspense>
+  return <Suspense fallback={<p className="nb-fhint"><Spinner label="در حال بارگذاری کنسول" text /></p>}><Terminal path={`/ws/notebook-console/${enc(name)}`} /></Suspense>
 }
 
 export default function NotebookDetails({ nb, onClose }) {

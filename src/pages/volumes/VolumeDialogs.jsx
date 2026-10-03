@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiSend } from '../../lib/api.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
+import Spinner from '../../components/Spinner.jsx'
 
 const enc = encodeURIComponent
 const rnd = () => 2 + Math.floor(Math.random() * 9)
@@ -48,7 +49,7 @@ export function DeleteVolume({ vol, onClose, onDone }) {
         {err && <div className="nb-form-err" role="alert" dir="auto">{err}</div>}
         <div className="cd-actions">
           <button className="cd-btn" onClick={onClose} disabled={busy}>انصراف</button>
-          <button className="cd-btn cd-danger" onClick={submit} disabled={!ok}>{busy ? 'در حال حذف…' : 'حذف'}</button>
+          <button className="cd-btn cd-danger" onClick={submit} disabled={!ok}>{busy ? <Spinner label="در حال حذف" /> : 'حذف'}</button>
         </div>
       </div>
     </>
@@ -96,7 +97,7 @@ export function AutoresizeVolume({ vol, onClose, onDone }) {
         {err && <div className="nb-form-err" role="alert" dir="auto">{err}</div>}
         <div className="cd-actions">
           <button className="cd-btn" onClick={onClose} disabled={busy}>انصراف</button>
-          <button className="cd-btn cd-primary" onClick={submit} disabled={!valid || busy}>{busy ? 'در حال ذخیره…' : 'ذخیره'}</button>
+          <button className="cd-btn cd-primary" onClick={submit} disabled={!valid || busy}>{busy ? <Spinner label="در حال ذخیره" /> : 'ذخیره'}</button>
         </div>
       </div>
     </>

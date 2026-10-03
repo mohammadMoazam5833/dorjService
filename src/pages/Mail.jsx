@@ -5,6 +5,7 @@ import { useApi, apiPost, invalidate } from '../lib/api.js'
 import { mailListPath, adaptMailPage, messagePath, adaptMailBody } from '../lib/adapters/mail.js'
 import ErrorNote from '../components/ErrorNote.jsx'
 import './Mail.css'
+import Spinner from '../components/Spinner.jsx'
 
 const FA_FOLDER = {
   INBOX: 'صندوق ورودی',
@@ -181,8 +182,7 @@ export default function Mail() {
               <button className="ml-modal-close" onClick={() => setMsg(null)}>✕</button>
             </div>
             <div className="ml-modal-body">
-              {bodyLoading ? 'در حال بارگذاری…'
-                : body?.text ? <div style={{ whiteSpace: 'pre-wrap' }} dir="auto">{body.text}</div>
+              {bodyLoading ? <Spinner label="در حال بارگذاری" /> : body?.text ? <div style={{ whiteSpace: 'pre-wrap' }} dir="auto">{body.text}</div>
                 : body?.html ? <iframe title="mail" sandbox="" srcDoc={body.html} style={{ width: '100%', minHeight: 320, border: 0 }} />
                 : 'این پیام متنی ندارد.'}
               {body?.attachments?.length > 0 && (

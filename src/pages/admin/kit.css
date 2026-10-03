@@ -106,3 +106,7 @@ tr.gp-kind:hover, tr.gp-kind.on { background: #eef3fb; }
 .ct-chip { display: inline-flex; align-items: center; gap: 6px; background: #eef3fb; color: #1E3A8A; border-radius: 99px; padding: 4px 6px 4px 12px; font-size: 12.5px; }
 .ct-chip button { border: 0; background: #dbe5f5; color: #1E3A8A; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; line-height: 1; }
 .ct-chip button:disabled { opacity: .5; cursor: not-allowed; }
+.ac-bar { position: sticky; top: 0; z-index: 3; background: #fff; padding: 8px 0; margin-bottom: 4px; border-bottom: 1px solid #f0f3f7; }
+.ac-check { width: 17px; height: 17px; cursor: pointer; accent-color: #1E3A8A; }
+.ac-check:disabled { cursor: wait; }
+td.ac-changed { background: #fff7e6; }

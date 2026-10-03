@@ -3,6 +3,7 @@ import { apiSend } from '../../lib/api.js'
 import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { Err, Modal, useTable } from './kit.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 // Port of the platform's admin-panel-security: Trivy Operator (CVEs, misconfig, compliance),
 // kube-bench (CIS) and Falco runtime alerts. Lists are paged and searched server-side.
@@ -82,7 +83,7 @@ export default function Security() {
   const mute = rule => { rule = (rule || '').trim(); if (rule && !settings.muted_rules.includes(rule)) putFalco({ muted_rules: [...settings.muted_rules, rule] }) }
 
   if (err && !summary) return <div className="ak-card"><h2>امنیت</h2><Err>{err}</Err></div>
-  if (!summary) return <div className="ak-card"><h2>امنیت</h2><p className="ak-muted">در حال بارگذاری…</p></div>
+  if (!summary) return <div className="ak-card"><h2>امنیت</h2><Loading /></div>
   const v = summary.vulnerabilities || {}, m = summary.misconfigurations || {}
   const catalog = list.catalog || []
   const selected = list.selected || {}
@@ -107,7 +108,7 @@ export default function Security() {
       {view === 'compliance' && catalog.length > 0 && (
         <div className="ak-toolbar" dir="ltr"><Seg items={catalog.map(c => [c.id, c.title])} value={report} onPick={r => { setReport(r); setPage(1) }} /></div>
       )}
-      {view !== 'cis' && listLoading && <p className="ak-muted">در حال بارگذاری…</p>}
+      {view !== 'cis' && listLoading && <Loading />}
 
       {view === 'cis' && (!cis?.available ? <p className="ak-muted">هنوز kube-bench اجرا نشده — scripts/116-deploy-kube-bench.sh را اجرا کنید (روزانه هم اجرا می‌شود).</p> : <>
         <Cards items={[['Pass', cis.totals?.pass], ['Fail', cis.totals?.fail], ['Warn', cis.totals?.warn]]} />

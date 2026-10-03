@@ -4,6 +4,7 @@ import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { SCOPES, normalized, planRow, planFromForm, renamePlan, planInUse, validWeight, duration } from '../../lib/admin/ratelimits.js'
 import { Field, Err, Modal, Pill, useTable, useCaptcha } from './kit.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 const B = '/admin-panel/api/admin/rate-limits'
 const fresh = p => getJson(`${p}?t=${Date.now()}`, { ttlMs: 0 })
@@ -118,7 +119,7 @@ export default function RateLimits() {
   const oT = useTable(overrides, { keys: ['name', 'scope_label', 'plan'], sort: { key: 'name', dir: 'asc' } })
 
   if (err) return <Err>{err}</Err>
-  if (!config) return <p className="ak-muted">در حال بارگذاری محدودیت‌ها…</p>
+  if (!config) return <Loading label="در حال بارگذاری محدودیت‌ها" />
   const st = state.status
 
   const applyPlan = (name, plan) => {

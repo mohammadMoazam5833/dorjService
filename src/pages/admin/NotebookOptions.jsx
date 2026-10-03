@@ -3,6 +3,7 @@ import { apiSend } from '../../lib/api.js'
 import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { Field, Err } from './kit.jsx'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 const API = '/admin-panel/api/admin/notebook-options'
 
@@ -17,7 +18,7 @@ export default function NotebookOptions() {
       setD({ image_default: r.data.image_default || '', image_options: r.data.image_options || [], gpu_vendors: r.data.gpu_vendors || [] })
     })
   }, [])
-  if (!d) return <div className="ak-card"><Err>{err}</Err>{!err && <p className="ak-muted">در حال بارگذاری…</p>}</div>
+  if (!d) return <div className="ak-card"><Err>{err}</Err>{!err && <Loading />}</div>
 
   const imgs = d.image_options
   const dup = v => !!v.trim() && imgs.filter(x => (x || '').trim() === v.trim()).length > 1
@@ -65,7 +66,7 @@ export default function NotebookOptions() {
         <button className="ak-btn" onClick={() => setD(s => ({ ...s, gpu_vendors: [...s.gpu_vendors, { limitsKey: '', uiName: '' }] }))}>+ افزودن</button>
       </div>
       <Err>{err}</Err>
-      <button className="ak-btn ak-primary" onClick={save} disabled={saving || anyDup}>{saving ? 'در حال ذخیره…' : 'ذخیره‌ی تغییرات'}</button>
+      <button className="ak-btn ak-primary" onClick={save} disabled={saving || anyDup}>{saving ? <Spinner label="در حال ذخیره" /> : 'ذخیره‌ی تغییرات'}</button>
     </>
   )
 }

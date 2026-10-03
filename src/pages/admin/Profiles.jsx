@@ -4,6 +4,7 @@ import { getJson } from '../../lib/http.js'
 import ErrorNote from '../../components/ErrorNote.jsx'
 import { useTable, useWhoami, Pill } from './kit.jsx'
 import ProfileEdit, { tierLabel, nodeDetail, ScheduleRow } from './ProfileEdit.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 const P = '/admin-panel/api/admin/profiles'
 const quota = (p, k) => p.resource_quota?.hard?.[k] || '—'
@@ -53,7 +54,7 @@ export default function Profiles() {
         <div className="ak-card">
           <div className="ak-toolbar"><h2 style={{ margin: 0 }}>مدیریت پروفایل‌ها</h2><div className="spacer" />{t.search('جستجوی نام یا مالک…')}</div>
           <ErrorNote error={error} />
-          {loading && !error ? <p className="ak-muted">در حال بارگذاری…</p> : (
+          {loading && !error ? <Loading /> : (
             <div className="ak-table-scroll">
               <table className="ak-table">
                 <thead><tr>{t.th('name', 'نام')}{t.th('owner', 'مالک')}{t.th('cpu', 'CPU', p => quota(p, 'cpu'))}{t.th('memory', 'حافظه', p => quota(p, 'memory'))}

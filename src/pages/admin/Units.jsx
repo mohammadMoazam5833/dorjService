@@ -6,6 +6,7 @@ import { ACCESS_ROLES } from '../../lib/admin/roles.js'
 import { UNIT_FLAGS, budgetBars, specFromForm } from '../../lib/admin/units.js'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { Field, Err, Modal, useTable } from './kit.jsx'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 // Port of the platform's admin Units tab (super admins): organisational units with a resource
 // budget, unit admins, delegated permissions, and user/profile membership.
@@ -55,7 +56,7 @@ function UnitForm({ unit, onClose, onSaved }) {
   }
   return (
     <Modal wide busy={busy} title={isNew ? 'واحد جدید' : `ویرایش ${unitLabel(unit)}`} onClose={onClose}
-      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={save} disabled={busy}>{busy ? 'در حال ذخیره…' : 'ذخیره'}</button></>}>
+      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={save} disabled={busy}>{busy ? <Spinner label="در حال ذخیره" /> : 'ذخیره'}</button></>}>
       <div className="ak-row">
         <Field label="شناسه‌ی واحد"><input className="ak-input" dir="ltr" value={f.name} disabled={!isNew} placeholder="ai-lab" onChange={e => set('name', e.target.value)} /></Field>
         <Field label="نام نمایشی (فارسی)"><input className="ak-input" dir="auto" value={f.fa} onChange={e => set('fa', e.target.value)} /></Field>
@@ -117,10 +118,10 @@ function Members({ unit, onClose, onSaved }) {
   )
   return (
     <Modal wide busy={busy} title={`اعضای ${unitLabel(unit)}`} onClose={onClose}
-      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={save} disabled={busy || !users}>{busy ? 'در حال ذخیره…' : 'ذخیره'}</button></>}>
+      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={save} disabled={busy || !users}>{busy ? <Spinner label="در حال ذخیره" /> : 'ذخیره'}</button></>}>
       <p className="ak-muted">موارد تیک‌خورده به این واحد منتقل می‌شوند. یک پروفایل فقط وقتی منتقل می‌شود که بودجه‌ی واحد گنجایش سهمیه‌ی آن را داشته باشد.</p>
       <input className="ak-search" type="search" placeholder="جستجو…" value={q} onChange={e => setQ(e.target.value)} />
-      {!users && !err ? <p className="ak-muted">در حال بارگذاری…</p> : <div className="unit-members-cols">{col('کاربران', users || [], setUsers)}{col('پروفایل‌ها', profiles, setProfiles)}</div>}
+      {!users && !err ? <Loading /> : <div className="unit-members-cols">{col('کاربران', users || [], setUsers)}{col('پروفایل‌ها', profiles, setProfiles)}</div>}
       <Err>{err}</Err>
     </Modal>
   )
@@ -145,7 +146,7 @@ export default function Units() {
     <div className="ak-card">
       <div className="ak-toolbar"><h2 style={{ margin: 0 }}>واحدها</h2><div className="spacer" /><button className="ak-btn ak-primary" onClick={() => setForm({})}>+ واحد جدید</button></div>
       <Err>{err}</Err>
-      {!units && !err && <p className="ak-muted">در حال بارگذاری…</p>}
+      {!units && !err && <Loading />}
       {units && <>
         <div className="ak-toolbar">{t.search()}</div>
         <div className="ak-table-scroll">

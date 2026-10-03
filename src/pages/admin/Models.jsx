@@ -5,6 +5,7 @@ import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { decorate, validateArgs, fittingNodes, reservedFor, STATUS_LABELS } from '../../lib/admin/models.js'
 import { Field, Err, Modal, Pill, useTable, useCaptcha } from './kit.jsx'
 import './models.css'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 const RateLimits = lazy(() => import('./RateLimits.jsx'))
 const B = '/admin-panel/api/admin/models'
@@ -56,7 +57,7 @@ function ConfirmAction({ action, target, extra, onClose, onDone }) {
   const title = target?.display_name || target?.model_name || extra?.repo_id || (action === 'save_kaggle' ? 'اطلاعات Kaggle' : '')
   return (
     <Modal title={`تأیید: ${title}`} onClose={onClose} busy={busy}
-      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={submit} disabled={busy}>{busy ? 'در حال انجام…' : 'تأیید'}</button></>}>
+      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={submit} disabled={busy}>{busy ? <Spinner label="در حال انجام" /> : 'تأیید'}</button></>}>
       {WARN[action] && <p className="ak-warn" dir="auto">{WARN[action](target || {}, extra || {})}</p>}
       <p className="ak-muted">برای امنیت، هر عملیات در این بخش به گذرواژه‌ی شما و کد امنیتی زیر نیاز دارد.</p>
       <Field label="گذرواژه‌ی شما"><input className="ak-input" type="password" dir="ltr" value={password} onChange={e => setPassword(e.target.value)} autoFocus /></Field>
@@ -106,7 +107,7 @@ function Configure({ m, onClose, onSubmit }) {
   return (
     <Modal wide title={`پیکربندی و استقرار: ${m.display_name}`} onClose={onClose}
       actions={<><button className="ak-btn" onClick={onClose}>انصراف</button><button className="ak-btn ak-primary" onClick={submit} disabled={loading}>استقرار با این تنظیمات</button></>}>
-      {loading && <p className="ak-muted">در حال بررسی فایل‌های دانلودشده برای پیشنهاد اولیه…</p>}
+      {loading && <Loading label="در حال بررسی فایل‌های دانلودشده برای پیشنهاد اولیه" />}
       {warning && <p className="ak-muted" dir="auto">{warning}</p>}
       <div className="ak-row">
         <Field label="موتور"><select className="ak-select" dir="ltr" value={engine} onChange={e => setEngine(e.target.value)}>{ENGINES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
@@ -130,7 +131,7 @@ function Tile({ m, open, act, configure }) {
   const stop = fn => e => { e.stopPropagation(); fn() }
   return (
     <div className="md-tile" onClick={() => open(m)}>
-      <div className="md-tile-head"><span className="md-icon">{(m.family_label || '?').slice(0, 2).toUpperCase()}</span><Pill ok={m.status === 'serving'} warn={statusVariant(m.status) === 'warn'}>{m.status_label}</Pill></div>
+      <div className="md-tile-head"><span className="md-icon">{(m.family_label || '?').slice(0, 2).toUpperCase()}</span><Pill ok={m.status === 'serving'} warn={statusVariant(m.status) === 'warn'}>{['downloading', 'copying', 'deploying'].includes(m.status) && <Spinner size={11} label={m.status_label} />} {m.status_label}</Pill></div>
       <h3 dir="auto">{m.display_name}</h3>
       {m.source_repo && <p className="md-src" dir="ltr">{m.source_repo}</p>}
       <div className="md-meta">
@@ -152,7 +153,7 @@ function Tile({ m, open, act, configure }) {
         {m.status === 'download_failed' && <><button className="ak-btn ak-primary" onClick={stop(() => act('download', m, { force: true }))}>تلاش دوباره</button><button className="ak-btn ak-danger" onClick={stop(() => act('delete', m))}>حذف</button></>}
         {m.pausable && <button className="ak-btn" onClick={stop(() => act('pause', m))}>توقف موقت</button>}
         {m.resumable && <><button className="ak-btn ak-primary" onClick={stop(() => act('resume', m))}>ادامه</button><button className="ak-btn ak-danger" onClick={stop(() => act('delete', m))}>حذف</button></>}
-        {m.status === 'deploying' && <><button className="ak-btn" disabled>{m.status_label}</button><button className="ak-btn ak-primary" onClick={stop(() => configure(m))}>پیکربندی دوباره</button><button className="ak-btn ak-danger" onClick={stop(() => act('delete', m))}>حذف</button></>}
+        {m.status === 'deploying' && <><button className="ak-btn" disabled><Spinner label={m.status_label} text /></button><button className="ak-btn ak-primary" onClick={stop(() => configure(m))}>پیکربندی دوباره</button><button className="ak-btn ak-danger" onClick={stop(() => act('delete', m))}>حذف</button></>}
         {m.status === 'downloaded' && <>{m.deployable ? <button className="ak-btn ak-primary" onClick={stop(() => act('deploy', m, m.conflicts_currently_serving?.length ? { confirm_stop_conflicts: true } : {}))}>استقرار</button>
           : <button className="ak-btn ak-primary" onClick={stop(() => configure(m))}>پیکربندی</button>}<button className="ak-btn ak-danger" onClick={stop(() => act('delete', m))}>حذف</button></>}
         {m.status === 'serving' && <><button className="ak-btn" onClick={stop(() => configure(m))}>پیکربندی دوباره</button><button className="ak-btn" onClick={stop(() => act('undeploy', m))}>توقف</button><button className="ak-btn ak-danger" onClick={stop(() => act('delete', m))}>حذف</button></>}
@@ -189,7 +190,7 @@ function Search({ act }) {
       <div className="ak-row" style={{ alignItems: 'flex-end' }}>
         <Field label="منبع"><select className="ak-select" value={source} onChange={e => setSource(e.target.value)}><option value="huggingface">HuggingFace</option><option value="kaggle">Kaggle</option></select></Field>
         <Field label="عبارت جستجو"><input className="ak-input" dir="ltr" placeholder="e.g. Qwen3" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && go()} /></Field>
-        <button className="ak-btn ak-primary" style={{ marginBottom: 12 }} onClick={go} disabled={loading}>{loading ? 'در حال جستجو…' : 'جستجو'}</button>
+        <button className="ak-btn ak-primary" style={{ marginBottom: 12 }} onClick={go} disabled={loading}>{loading ? <Spinner label="در حال جستجو" /> : 'جستجو'}</button>
       </div>
       <Err>{err}</Err>
       {results.length > 0 && (
@@ -211,7 +212,7 @@ function Search({ act }) {
       {detail && (
         <Modal wide title={d?.repo_id || '…'} onClose={() => setDetail(null)}
           actions={<><button className="ak-btn" onClick={() => setDetail(null)}>بستن</button>{d && <button className="ak-btn ak-primary" onClick={() => { setDetail(null); act('import', null, { repo_id: d.repo_id, source: d.source }) }}>وارد کردن و دانلود</button>}</>}>
-          {detail.loading && <p className="ak-muted">در حال بارگذاری…</p>}
+          {detail.loading && <Loading />}
           <Err>{detail.error}</Err>
           {d && <>
             <div className="ak-toolbar">{d.pipeline_tag && <Pill>{d.pipeline_tag}</Pill>}{d.library_name && <Pill>{d.library_name}</Pill>}{d.gated && <Pill warn>Gated</Pill>}</div>
@@ -346,7 +347,7 @@ export default function Models() {
   return (
     <>
       <Err>{err}</Err>
-      {!models && !err && <p className="ak-muted">در حال بارگذاری…</p>}
+      {!models && !err && <Loading />}
       {models && (
         <>
           <nav className="ak-tabs">{tabs.map(([id, l]) => <button key={id} className={current === id ? 'on' : ''} onClick={() => setTab(id)}>{l}</button>)}</nav>
@@ -356,7 +357,7 @@ export default function Models() {
           {current === '__search' && <Search act={act} />}
           {current === '__settings' && <Kaggle act={act} />}
           {current === '__litellm' && <Gateway act={act} />}
-          {current === '__ratelimits' && <Suspense fallback={<p className="ak-muted">در حال بارگذاری…</p>}><RateLimits /></Suspense>}
+          {current === '__ratelimits' && <Suspense fallback={<Loading />}><RateLimits /></Suspense>}
         </>
       )}
       {detail && (

@@ -5,6 +5,7 @@ import { PROM, LOKI, TEMPO, REFRESH_MS, COLORS, OTHERS_KEY, DEFAULT_TRACEQL, RAN
 import { wedges } from '../../lib/admin/gpu.js'
 import { useTable } from './kit.jsx'
 import './monitoring.css'
+import Spinner from '../../components/Spinner.jsx'
 
 // Port of the platform's admin Monitoring tab: Observability (Prometheus charts, top users,
 // per-model slow-prompt RCA, Loki logs) and Traces (Tempo search + span waterfall). Read-only.
@@ -16,12 +17,15 @@ async function prom(path, params) {
   return r.data.data?.result || []
 }
 
+const BUSY = Symbol('busy')
+const showStatus = s => (s === BUSY ? <Spinner /> : s)
+
 const fmtNum = v => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : v >= 10 ? String(Math.round(v)) : String(Math.round(v * 100) / 100))
 
 function TimeChart({ title, series, hidden, onToggle, longRange }) {
   const W = 600, H = 170, PL = 44, PB = 22, PT = 8
-  const shown = series.filter(s => !hidden.has(s.label))
-  const sc = useMemo(() => scaleSeries(shown, { w: W - PL - 8, h: H - PB - PT }), [series, hidden])
+  const shown = useMemo(() => series.filter(s => !hidden.has(s.label)), [series, hidden])
+  const sc = useMemo(() => scaleSeries(shown, { w: W - PL - 8, h: H - PB - PT }), [shown])
   const [hover, setHover] = useState(null)
   const fmtT = t => { const d = new Date(t * 1000); return longRange ? d.toLocaleDateString([], { month: 'short', day: 'numeric' }) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   const onMove = e => {
@@ -95,7 +99,7 @@ function Observability() {
   }
   const loadLogs = async job => {
     if (!job) return
-    setLogs(l => ({ ...l, status: 'در حال بارگذاری…' }))
+    setLogs(l => ({ ...l, status: BUSY }))
     const r = await getJson(`${LOKI}/query_range?${new URLSearchParams({ query: `{namespace="vllm",pod=~"${job}-.*"}`, minutes: '30', limit: '400' })}`, { ttlMs: 0 })
     if (r.error || (r.data?.status && r.data.status !== 'success')) { setLogs({ lines: [], status: r.error?.message || r.data?.error || 'Loki error' }); return }
     const out = []
@@ -114,7 +118,7 @@ function Observability() {
     setRcaData(res)
   }
   const refresh = async map => {
-    setStatus('در حال بارگذاری…')
+    setStatus(BUSY)
     const res = {}
     await Promise.all(CHARTS.map(async cfg => { res[cfg.id] = await loadChart(cfg, map) }))
     setData(res)
@@ -158,7 +162,7 @@ function Observability() {
         <span className="ak-label">بازه</span>
         <span className="gp-seg">{RANGES.map(r => <button key={r.minutes} className={range === r.minutes ? 'on' : ''} onClick={() => setRange(r.minutes)}>{r.label}</button>)}</span>
         <button className="ak-btn" onClick={() => aliases && refresh(aliases)}>بارگذاری دوباره</button>
-        <span className="ak-muted">{status}</span>
+        <span className="ak-muted">{showStatus(status)}</span>
       </div>
       <div className="mo-grid">
         {CHARTS.map(c => <TimeChart key={c.id} title={c.title} series={data[c.id] || []} hidden={getHidden(c.id)} onToggle={l => toggle(c.id, l)} longRange={longRange} />)}
@@ -193,7 +197,7 @@ function Observability() {
             <span className="mo-title" style={{ margin: 0 }}>لاگ‌ها (Loki، ۳۰ دقیقه‌ی اخیر)</span>
             <input className="ak-search" type="search" dir="ltr" placeholder="فیلتر…" value={logFilter} onChange={e => setLogFilter(e.target.value)} />
             <button className="ak-btn" onClick={() => loadLogs(sel)}>بارگذاری دوباره</button>
-            <span className="ak-muted">{logs.status}</span>
+            <span className="ak-muted">{showStatus(logs.status)}</span>
           </div>
           <pre className="mo-log" dir="ltr">{logText}</pre>
         </div>
@@ -201,6 +205,9 @@ function Observability() {
     </>
   )
 }
+
+const BIG_TRACE = 300
+const MAX_ROWS = 800
 
 function Traces() {
   const [ql, setQl] = useState(DEFAULT_TRACEQL)
@@ -216,7 +223,7 @@ function Traces() {
   const t = useTable(rows, { keys: ['svcList', 'traceID'], sort: { key: 'durationMs', dir: 'desc' }, per: 15 })
 
   const search = async () => {
-    setLoading(true); setStatus('در حال جستجو…'); setTrace(null)
+    setLoading(true); setStatus(BUSY); setTrace(null)
     const r = await getJson(`${TEMPO}/search?${new URLSearchParams({ q: traceQuery(ql, ip), minutes: '60', limit: '150' })}`, { ttlMs: 0 })
     setLoading(false)
     if (r.error) { setRows([]); setStatus(r.error.message); return }
@@ -230,16 +237,18 @@ function Traces() {
   }
   useEffect(() => { search() }, [])
   const open = async id => {
-    setStatus('در حال بارگذاری trace…')
+    setStatus(BUSY)
     const r = await getJson(`${TEMPO}/trace/${encodeURIComponent(id)}`, { ttlMs: 0 })
     if (r.error) { setStatus(r.error.message); return }
     const p = parseTrace(r.data)
-    setTrace({ id, ...p }); setCollapsed(new Set()); setZoom(null)
+    // huge traces (seen live: 63k spans) start with every branch below the roots folded
+    setTrace({ id, ...p }); setCollapsed(new Set(p.spans.length > BIG_TRACE ? p.spans.filter(x => x.hasChildren && x.depth >= 1).map(x => x.id) : [])); setZoom(null)
     setStatus(p.spans.length ? `${p.spans.length} span` : 'این trace هنوز span ندارد')
   }
 
   const from = zoom?.[0] ?? 0, to = zoom?.[1] ?? trace?.total ?? 1, win = Math.max(0.001, to - from)
-  const vis = trace ? visibleSpans(trace.spans, collapsed) : []
+  const allVis = trace ? visibleSpans(trace.spans, collapsed) : []
+  const vis = allVis.slice(0, MAX_ROWS)
   const frac = e => { const r = scope.current.getBoundingClientRect(); return ((e.clientX - r.left) / r.width - 0.4) / 0.6 }
   const onDown = e => { const f = frac(e); if (f >= 0 && f <= 1) { setDrag([f, f]); e.preventDefault() } }
   const onMove = e => drag && setDrag([drag[0], Math.max(0, Math.min(1, frac(e)))])
@@ -261,7 +270,7 @@ function Traces() {
         <input className="ak-input" dir="ltr" style={{ flex: 2, minWidth: 220 }} placeholder="TraceQL" value={ql} onChange={e => setQl(e.target.value)} />
         <input className="ak-input" dir="ltr" style={{ flex: 1 }} placeholder="IP کلاینت (اختیاری)" value={ip} onChange={e => setIp(e.target.value)} />
         <button className="ak-btn ak-primary" onClick={search} disabled={loading}>جستجو</button>
-        <span className="ak-muted">{status}</span>
+        <span className="ak-muted">{showStatus(status)}</span>
       </div>
       {!loading && !rows.length && <div className="mo-empty">traceای نیست — TraceQL را بازتر کنید، فیلتر IP را بردارید یا چند درخواست بفرستید</div>}
       {rows.length > 0 && <>
@@ -313,6 +322,7 @@ function Traces() {
                 )
               })}
             </div>
+            {allVis.length > vis.length && <p className="ak-warn" dir="rtl">فقط {MAX_ROWS} span اول نمایش داده شده؛ {allVis.length - vis.length} span دیگر — شاخه‌ها را ببندید یا زوم کنید.</p>}
             <div className="tr-legend" dir="rtl">
               <span>#N = ترتیب زمانی شروع در کل trace</span>
               <span>خط‌چین عمودی = زمان شروع یک span تا جایی که فرزندانش شروع می‌شوند (فرزند همیشه روی/بعد از این خط شروع می‌شود)</span>

@@ -3,6 +3,7 @@ import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { Modal, Field, Err, downloadBlob, rawSend } from './kit.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 export const ACCESS_ROLES = [
   ['access-resources', 'درخواست منابع'], ['access-vm', 'ماشین مجازی'], ['access-cost', 'داشبورد هزینه'],
@@ -108,7 +109,7 @@ export default function OnboardWizard({ isSuper, onClose, onDone }) {
   })
 
   const undo = st.user_id && err && step > 1 && <button className="ak-btn" disabled={busy} onClick={async () => { setBusy(true); await rollback(); setBusy(false); onDone() }}>لغو همه‌ی موارد ساخته‌شده</button>
-  const nextBtn = (fn, label = 'بعدی') => <button className="ak-btn ak-primary" disabled={busy} onClick={fn}>{busy ? 'در حال انجام…' : label}</button>
+  const nextBtn = (fn, label = 'بعدی') => <button className="ak-btn ak-primary" disabled={busy} onClick={fn}>{busy ? <Spinner label="در حال انجام" /> : label}</button>
   const cancelBtn = <button className="ak-btn" onClick={cancel} disabled={busy}>انصراف</button>
 
   return (

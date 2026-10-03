@@ -4,6 +4,7 @@ import { getJson } from '../../lib/http.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import { groupUsage, wedges, weightText, resourceLabel, PIE_COLORS } from '../../lib/admin/gpu.js'
 import { Field, Err, Modal, Pill, useTable, useCaptcha } from './kit.jsx'
+import Spinner, { Loading } from '../../components/Spinner.jsx'
 
 const API = '/admin-panel/api/admin/gpu-passthrough'
 const SUBS = [['passthrough', 'Passthrough'], ['usage', 'مصرف (جدول)'], ['usage-chart', 'مصرف (نمودار)'], ['capital', 'سرمایه']]
@@ -46,7 +47,7 @@ function Reboot({ node, onClose, onDone }) {
   }
   return (
     <Modal title={`راه‌اندازی دوباره‌ی ${node}`} onClose={onClose} busy={busy}
-      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-danger" onClick={go} disabled={busy}>{busy ? 'در حال ارسال…' : 'راه‌اندازی دوباره‌ی نود'}</button></>}>
+      actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-danger" onClick={go} disabled={busy}>{busy ? <Spinner label="در حال ارسال" /> : 'راه‌اندازی دوباره‌ی نود'}</button></>}>
       <p className="ak-warn">این کار {node} را برای اعمال تغییر GPU دوباره راه‌اندازی می‌کند. همه‌ی بارهای کاری روی آن تخلیه می‌شوند؛ نود پیش از آن cordon و پس از بازگشت خودکار uncordon می‌شود.</p>
       <Field label="گذرواژه‌ی شما"><input className="ak-input" type="password" dir="ltr" value={password} onChange={e => setPassword(e.target.value)} autoFocus /></Field>
       {cap.view}
@@ -73,7 +74,7 @@ export default function Gpu() {
   useEffect(() => { load() }, [])
 
   const gpus = d?.gpus || []
-  const usage = d?.gpu_workload_usage || []
+  const usage = useMemo(() => d?.gpu_workload_usage || [], [d])
   const key = g => `${g.node}|${g.bdf}`
   const desiredOf = g => dirty[key(g)]?.desired || g.desired_driver
   const gT = useTable(gpus, { keys: ['node', 'bdf', 'model'], sort: { key: 'node', dir: 'asc' }, per: 12 })
@@ -85,7 +86,7 @@ export default function Gpu() {
   const dT = useTable(deptRows, { keys: ['namespace'], sort: { key: 'usd_per_day', dir: 'desc' } })
 
   if (err) return <div className="ak-card"><Err>{err}</Err></div>
-  if (!d) return <div className="ak-card"><p className="ak-muted">در حال بارگذاری…</p></div>
+  if (!d) return <div className="ak-card"><Loading /></div>
 
   const pending = (d.nodes || []).filter(n => n.pending_reboot)
   const setDesired = (g, desired) => {

@@ -8,6 +8,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { Err, useTable } from './kit.jsx'
 import './monitoring.css'
 import './assistant.css'
+import Spinner from '../../components/Spinner.jsx'
 
 // Port of the platform's admin troubleshooting assistant: tool-using LLM chat over cluster
 // state (kubeflow-admin-panel /troubleshoot), with render_chart tool output drawn in-app.
@@ -139,7 +140,7 @@ export default function Assistant() {
         <div className="ts-messages">
           {!messages.length && !sending && <p className="ak-muted" style={{ textAlign: 'center', padding: 30 }}>درباره‌ی وضعیت خوشه، نوت‌بوک‌ها، مدل‌ها یا خطاها بپرسید؛ دستیار با ابزارهای فقط‌خواندنی وضعیت واقعی را بررسی می‌کند.</p>}
           {messages.map((m, i) => <Message key={i} m={m} />)}
-          {sending && <div className="ts-row ts-assistant"><div className="ts-bubble ts-thinking">در حال فکر کردن…</div></div>}
+          {sending && <div className="ts-row ts-assistant"><div className="ts-bubble ts-thinking"><Spinner label="در حال فکر کردن" text /></div></div>}
           <div ref={end} />
         </div>
         <div className="ak-toolbar" style={{ marginTop: 10 }}>

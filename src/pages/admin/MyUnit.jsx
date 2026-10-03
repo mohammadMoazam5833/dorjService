@@ -3,6 +3,7 @@ import { getJson } from '../../lib/http.js'
 import { budgetBars } from '../../lib/admin/units.js'
 import { Err, Pill, useTable } from './kit.jsx'
 import { unitLabel } from './Units.jsx'
+import { Loading } from '../../components/Spinner.jsx'
 
 // Port of the platform's "My unit" tab: the units the signed-in admin manages (every unit for a
 // super admin), with budget/allocated/used/remaining cards and the unit's users and profiles.
@@ -25,7 +26,7 @@ export default function MyUnit() {
   const pT = useTable(profiles.filter(p => cur && p.unit === cur.name), { keys: ['name', 'owner'], sort: { key: 'name', dir: 'asc' } })
 
   if (err) return <div className="ak-card"><h2>واحد من</h2><Err>{err}</Err></div>
-  if (!units) return <div className="ak-card"><h2>واحد من</h2><p className="ak-muted">در حال بارگذاری…</p></div>
+  if (!units) return <div className="ak-card"><h2>واحد من</h2><Loading /></div>
   if (!units.length) return <div className="ak-card"><h2>واحد من</h2><p className="ak-muted">شما مدیر هیچ واحدی نیستید.</p></div>
   return (
     <>

@@ -4,6 +4,7 @@ import { apiSend, apiPost } from '../../lib/api.js'
 import { notifySuccess, notifyError } from '../../lib/notify.js'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import { Field, Err, Pill, Modal, useTable, downloadBlob, rawSend } from './kit.jsx'
+import Spinner from '../../components/Spinner.jsx'
 
 const enc = encodeURIComponent
 const P = '/admin-panel/api/admin/profiles'
@@ -411,7 +412,7 @@ export default function ProfileEdit({ profile, vendors, cluster, onCancel, onSav
       </div>
 
       <Err>{err}</Err>
-      <div className="ak-toolbar"><button className="ak-btn ak-primary" onClick={submit} disabled={saving}>{saving ? 'در حال ذخیره…' : 'ذخیره'}</button><button className="ak-btn" onClick={onCancel}>انصراف</button></div>
+      <div className="ak-toolbar"><button className="ak-btn ak-primary" onClick={submit} disabled={saving}>{saving ? <Spinner label="در حال ذخیره" /> : 'ذخیره'}</button><button className="ak-btn" onClick={onCancel}>انصراف</button></div>
 
       <nav className="ak-tabs" style={{ marginTop: 18 }}>{SUBTABS.map(([id, l]) => <button key={id} className={sub === id ? 'on' : ''} onClick={() => setSub(id)}>{l}</button>)}</nav>
       {sub === 'sla' && <SlaHistory ns={ns} reloadSchedule={reloadSla} />}

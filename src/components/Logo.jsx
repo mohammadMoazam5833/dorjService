@@ -8,7 +8,6 @@ import { useBranding } from '../lib/branding.js'
 export default function Logo({ variant = 'light', height = 40, showWord = true }) {
   const { logo_data_uri: logoUri, display_name: brandName } = useBranding()
   const word = variant === 'dark' ? '#0B1B3A' : '#F3F6FC'
-  const wordSub = variant === 'dark' ? '#8590a6' : 'rgba(210,220,240,.62)'
   const uid = variant + height
   const m = height // mark size
 
