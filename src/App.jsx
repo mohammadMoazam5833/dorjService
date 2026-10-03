@@ -7,6 +7,7 @@ import Usage from './pages/Usage.jsx'
 import Help from './pages/Help.jsx'
 import AdminPanel from './pages/admin/AdminPanel.jsx'
 import Embed from './pages/Embed.jsx'
+import Backups from './pages/Backups.jsx'
 
 function useHash() {
   const [hash, setHash] = useState(() => window.location.hash.replace(/^#\/?/, '').split('?')[0])
@@ -30,6 +31,7 @@ export default function App() {
     case 'help': return <Help />
     case 'admin-panel': return <AdminPanel />
     case 'embed': return <Embed />
+    case 'backups': return <Backups />
     default: return <Dashboard />
   }
 }

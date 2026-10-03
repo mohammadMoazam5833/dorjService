@@ -1,16 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import Icon from './Icon.jsx'
-import { useApi } from '../lib/api.js'
 import { usePrefs } from '../lib/prefs.jsx'
 import { useSession, initialsOf, changePassword, LOGOUT_URL } from '../lib/session.js'
-import { adaptBackups } from '../lib/adapters/workloads.js'
 import './UserWidget.css'
 
 
 export default function UserWidget() {
   const [open, setOpen] = useState(false)
   const [pw, setPw] = useState(false)
-  const [bk, setBk] = useState(false)
   const [cur, setCur] = useState('')
   const [n1, setN1] = useState('')
   const [n2, setN2] = useState('')
@@ -20,8 +17,6 @@ export default function UserWidget() {
   const initials = initialsOf(email)
   const [pwErr, setPwErr] = useState('')
   const [pwBusy, setPwBusy] = useState(false)
-  const { data: backups } = useApi('/api/backups', [], [], adaptBackups)
-  const list = Array.isArray(backups) ? backups : []
 
   useEffect(() => {
     if (!open) return
@@ -67,10 +62,10 @@ export default function UserWidget() {
               <Icon name="mail" size={15} color="#56657f" />
               <span>ایمیل</span>
             </a>
-            <div className="uw-item" onClick={() => { close(); setBk(true) }}>
+            <a className="uw-item" href="#/backups" onClick={close}>
               <Icon name="backup" size={15} color="#56657f" />
               <span>بکاپ‌ها</span>
-            </div>
+            </a>
             <div className="uw-item" onClick={() => { close(); setPw(true) }}>
               <Icon name="lock" size={15} color="#56657f" />
               <span>تغییر گذرواژه</span>
@@ -119,33 +114,6 @@ export default function UserWidget() {
         </>
       )}
 
-      {bk && (
-        <>
-          <div className="uw-backdrop" onClick={() => setBk(false)} />
-          <div className="uw-modal" dir="rtl">
-            <h2 className="uw-modal-title">بکاپ‌ها</h2>
-            {list.length === 0 ? (
-              <p className="uw-empty">هیچ بکاپی در دسترس نیست.</p>
-            ) : (
-              <table className="uw-table">
-                <thead><tr><th>نام</th><th>تاریخ</th><th>حجم</th></tr></thead>
-                <tbody>
-                  {list.map((b, i) => (
-                    <tr key={i}>
-                      <td>{b.name || b.id}</td>
-                      <td>{(b.created_at || b.date || '—').slice(0, 10)}</td>
-                      <td>{b.size || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <div className="uw-modal-actions">
-              <button className="uw-btn-sec" onClick={() => setBk(false)}>بستن</button>
-            </div>
-          </div>
-        </>
-      )}
     </>
   )
 }

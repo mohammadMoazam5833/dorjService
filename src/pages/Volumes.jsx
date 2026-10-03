@@ -3,10 +3,11 @@ import AppShell from '../components/AppShell.jsx'
 import { useApi, apiPost, apiSend } from '../lib/api.js'
 import { fmt } from '../lib/format.js'
 import { adaptVolumes, adaptVms } from '../lib/adapters/workloads.js'
-import { soonProps, SOON } from '../lib/soon.js'
 import ErrorNote from '../components/ErrorNote.jsx'
 import { DeleteVolume, AutoresizeVolume } from './volumes/VolumeDialogs.jsx'
 import { openInApp } from './Embed.jsx'
+import VmDetails from './vms/VmDetails.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { relativeUrl } from '../lib/adapters/workloads.js'
 import { notifySuccess, notifyError } from '../lib/notify.js'
 import { invalidate } from '../lib/api.js'
@@ -456,7 +457,7 @@ function VmStatusBadge({ status }) {
   )
 }
 
-function VmRowMenu({ vm }) {
+function VmRowMenu({ vm, busy, onStartStop, onRestart, onDetails, onDelete }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -465,23 +466,23 @@ function VmRowMenu({ vm }) {
     document.addEventListener('mousedown', h)
     return () => document.removeEventListener('mousedown', h)
   }, [open])
+  const running = vm.status === 'Running'
+  const settled = running || vm.status === 'Stopped'
+  const act = fn => { setOpen(false); fn() }
+  const item = (label, d, fn, enabled = true, danger = false) => (
+    <div className={`vl-menu-item ${danger ? 'danger' : ''} ${enabled && !busy ? '' : 'disabled'}`} onClick={() => enabled && !busy && act(fn)}>
+      <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d={d} /></svg>{label}
+    </div>
+  )
   return (
     <div className="vl-menu-wrap" ref={ref}>
       <button className={`vl-menu-btn ${open ? 'open' : ''}`} onClick={() => setOpen(o => !o)}>⋯</button>
       {open && (
         <div className="vl-menu-drop">
-          <div className="vl-menu-item disabled" title={SOON} aria-disabled="true">
-            <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor">
-              {vm.status === 'Running'
-                ? <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                : <path d="M8 5v14l11-7z" />}
-            </svg>
-            {vm.status === 'Running' ? 'توقف' : 'راه‌اندازی'} <span className="vl-soon">{SOON}</span>
-          </div>
-          <div className="vl-menu-item danger disabled" title={SOON} aria-disabled="true">
-            <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>
-            حذف <span className="vl-soon">{SOON}</span>
-          </div>
+          {item('جزئیات و کنسول', 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z', onDetails)}
+          {item(running ? 'توقف' : 'راه‌اندازی', running ? 'M6 19h4V5H6v14zm8-14v14h4V5h-4z' : 'M8 5v14l11-7z', onStartStop, settled)}
+          {item('راه‌اندازی دوباره', 'M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z', onRestart, running)}
+          {item('حذف', 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z', onDelete, true, true)}
         </div>
       )}
     </div>
@@ -490,7 +491,24 @@ function VmRowMenu({ vm }) {
 
 export function Vms() {
   const { data: en }   = useApi('/api/vms/enabled')
-  const { data, loading, error } = useApi('/api/vms', null, [], adaptVms)
+  const { data, loading, error, reload } = useApi('/api/vms', null, [], adaptVms)
+  const [vmDetails, setVmDetails] = useState(null)
+  const [vmDel, setVmDel] = useState(null)
+  const [vmBusy, setVmBusy] = useState('')
+  const vmRefresh = () => { invalidate('/api/vms'); reload() }
+  const vmCall = async (vm, method, path, body, ok) => {
+    setVmBusy(vm.name)
+    const r = await apiSend(`/api/vms/${encodeURIComponent(vm.name)}${path}`, method, body)
+    setVmBusy('')
+    if (r.error) { notifyError(r.error.message); return false }
+    notifySuccess(ok); vmRefresh(); return true
+  }
+  const vmTransitional = (Array.isArray(data) ? data : []).some(v => !['Running', 'Stopped'].includes(v.status))
+  useEffect(() => {
+    if (!vmTransitional) return
+    const t = setInterval(vmRefresh, 5000)
+    return () => clearInterval(t)
+  }, [vmTransitional])
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState('name')
   const [sortDir, setSortDir] = useState('asc')
@@ -578,13 +596,17 @@ export function Vms() {
               <tbody>
                 {shown.map(v => (
                   <tr key={v.name || v.id}>
-                    <td><div className="vl-name">{v.name || v.id}</div></td>
+                    <td><button className="nb-linklike vl-name" onClick={() => setVmDetails(v)}><bdi dir="ltr">{v.name}</bdi></button></td>
                     <td><VmStatusBadge status={v.status} /></td>
                     <td>{v.cpu || '—'}</td>
                     <td>{v.memory ? `${v.memory}` : '—'}</td>
                     <td><bdi dir="ltr" style={{ fontFamily:'var(--font-latin)', fontSize:13 }}>{v.ip || '—'}</bdi></td>
                     <td><span className="vl-muted">{fmt.date(v.created_at)}</span></td>
-                    <td className="vl-menu-cell"><VmRowMenu vm={v} /></td>
+                    <td className="vl-menu-cell"><VmRowMenu vm={v} busy={vmBusy === v.name}
+                      onDetails={() => setVmDetails(v)}
+                      onStartStop={() => vmCall(v, 'PATCH', '', { stopped: v.status === 'Running' }, v.status === 'Running' ? `ماشین مجازی «${v.name}» در حال توقف است` : `ماشین مجازی «${v.name}» در حال راه‌اندازی است`)}
+                      onRestart={() => vmCall(v, 'POST', '/restart', {}, `ماشین مجازی «${v.name}» دوباره راه‌اندازی می‌شود`)}
+                      onDelete={() => setVmDel(v)} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -599,6 +621,13 @@ export function Vms() {
           </div>
         )}
       </div>
+      {vmDetails && <VmDetails vm={vmDetails} onClose={() => { setVmDetails(null); vmRefresh() }} />}
+      {vmDel && (
+        <ConfirmDialog danger title={`حذف ماشین مجازی «${vmDel.name}»؟`} typeToConfirm={vmDel.name} busy={vmBusy === vmDel.name}
+          body="ماشین مجازی حذف می‌شود و این کار قابل بازگشت نیست."
+          confirmLabel="حذف" onCancel={() => setVmDel(null)}
+          onConfirm={async () => { if (await vmCall(vmDel, 'DELETE', '', undefined, `ماشین مجازی «${vmDel.name}» حذف شد`)) setVmDel(null) }} />
+      )}
     </AppShell>
   )
 }

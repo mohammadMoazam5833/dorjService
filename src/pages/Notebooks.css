@@ -350,3 +350,4 @@ a.cd-btn { display: inline-flex; align-items: center; text-decoration: none; col
 .embed-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
 .embed-title { font-size: 13px; color: #56657f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .embed-frame { flex: 1; width: 100%; border: 0; background: #fff; }
+.nd-code { display: block; background: #f4f7fb; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; overflow-wrap: anywhere; }
