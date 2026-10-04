@@ -92,7 +92,9 @@ function Observability() {
       try { res = await prom('query_range', { query: expr, minutes: String(rangeCfg.minutes), step: String(rangeCfg.step) }) } catch (e) { setStatus(e.message) }
       for (const s of res) {
         const label = q.name || (q.label && s.metric?.[q.label] ? (map[s.metric[q.label]] || s.metric[q.label]) : Object.values(s.metric || {})[0] || 'value')
-        out.push({ label, color: COLORS[ci++ % COLORS.length], points: (s.values || []).map(v => [Number(v[0]), Number(v[1])]) })
+        // histogram_quantile over an idle window is all NaN - such a series has nothing to draw
+        const points = (s.values || []).map(v => [Number(v[0]), Number(v[1])]).filter(([, y]) => Number.isFinite(y))
+        if (points.length) out.push({ label, color: COLORS[ci++ % COLORS.length], points })
       }
     }
     return out
