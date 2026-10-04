@@ -148,10 +148,16 @@ test('security, monitoring, assistant history, units, my unit load', async ({ pa
   await sub('Traces').click()
   await expect(page.locator('.ak-toolbar .ak-muted').filter({ hasText: /trace|Tempo|error|HTTP/i }).first()).toBeVisible({ timeout: 60_000 })
   await expect(page.locator('.ak-card').getByText('در حال جستجو…')).toHaveCount(0, { timeout: 60_000 })
-  const tr = page.locator('tr.sec-click').first()
+  // a trace small enough to open draws its waterfall; a giant one is refused with a message
+  const tr = page.locator('tr.sec-click:not(:has(.ak-pill.warn))').first()
   if (await tr.count()) {
     await tr.click()
-    await expect(page.locator('.tr-row').first()).toBeVisible({ timeout: 30_000 })
+    await expect(page.locator('.tr-row').first()).toBeVisible({ timeout: 60_000 })
+  }
+  const giant = page.locator('tr.sec-click:has(.ak-pill.warn)').first()
+  if (await giant.count()) {
+    await giant.click()
+    await expect(page.locator('.ak-toolbar .ak-muted', { hasText: 'بزرگ‌تر از آن است' })).toBeVisible()
   }
   await openTab(page, 'دستیار هوشمند')
   await expect(page.locator('.ts-messages')).toBeVisible()

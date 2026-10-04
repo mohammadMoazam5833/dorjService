@@ -209,6 +209,7 @@ function Observability() {
 }
 
 const BIG_TRACE = 300
+const MAX_TRACE_SPANS = 50000
 const MAX_ROWS = 800
 
 function Traces() {
@@ -239,6 +240,14 @@ function Traces() {
   }
   useEffect(() => { search() }, [])
   const open = async id => {
+    const row = rows.find(x => x.traceID === id)
+    // Fetching a giant trace makes Tempo load it whole in memory - a 240k-span sglang trace
+    // OOM-killed it even at 8Gi (2026-10-04) - so those are not opened from here.
+    if (row && row.spanCount > MAX_TRACE_SPANS) {
+      setTrace(null)
+      setStatus(`این trace ${row.spanCount.toLocaleString()} span دارد و بزرگ‌تر از آن است که بدون خطر برای Tempo باز شود (حداکثر ${MAX_TRACE_SPANS.toLocaleString()}).`)
+      return
+    }
     setStatus(BUSY)
     const r = await getJson(`${TEMPO}/trace/${encodeURIComponent(id)}`, { ttlMs: 0 })
     if (r.error) { setStatus(r.error.message); return }
@@ -279,7 +288,7 @@ function Traces() {
         <div className="ak-toolbar">{t.search('فیلتر سرویس / trace id…')}</div>
         <table className="ak-table" dir="ltr"><thead><tr>{t.th('start', 'Time')}{t.th('svcList', 'Services in trace')}{t.th('spanCount', 'Spans')}{t.th('durationMs', 'Duration (ms)')}</tr></thead>
           <tbody>{t.shown.map(x => <tr key={x.traceID} className={`sec-click ${trace?.id === x.traceID ? 'gp-kind on' : ''}`} onClick={() => open(x.traceID)}>
-            <td>{x.start ? new Date(x.start).toLocaleString() : ''}</td><td>{x.svcList}</td><td>{x.spanCount}</td><td>{Math.round(x.durationMs)}</td></tr>)}</tbody></table>
+            <td>{x.start ? new Date(x.start).toLocaleString() : ''}</td><td>{x.svcList}</td><td>{x.spanCount > MAX_TRACE_SPANS ? <span className="ak-pill warn" title="برای باز کردن خیلی بزرگ است">{x.spanCount.toLocaleString()}</span> : x.spanCount}</td><td>{Math.round(x.durationMs)}</td></tr>)}</tbody></table>
         {t.pager}
       </>}
       {trace && (
