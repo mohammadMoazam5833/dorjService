@@ -51,7 +51,7 @@ export default function Logo({ variant = 'light', height = 40, showWord = true }
   if (logoUri) {
     const img = <img src={logoUri} alt={brandName || 'logo'} style={{ height: m, width: 'auto', display: 'block', maxWidth: 'none' }} />
     // collapsed sidebar: only the first letter of the wordmark (the left square of the 3:1 logo)
-    if (!showWord) return <span dir="ltr" style={{ display: 'block', width: Math.round(m * 1.14), height: m, overflow: 'hidden', flexShrink: 0 }}>{img}</span>
+    if (!showWord) return <span dir="ltr" style={{ display: 'block', width: Math.round(m * 1.2), height: m, overflow: 'hidden', flexShrink: 0 }}>{img}</span>
     return img
   }
 
