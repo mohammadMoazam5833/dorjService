@@ -11,6 +11,13 @@ export async function login(page, baseURL, user, pass) {
   const form = page.locator('form', { has: pw })
   await form.locator('input:visible:not([type="password"]):not([type="hidden"]):not([type="checkbox"])').first().fill(user)
   await pw.fill(pass)
+  // the theme's email-suffix.js copies the visible local-part into the hidden #username on
+  // input/submit; pressing Enter before that script has run submitted an empty username
+  // (Keycloak LOGIN_ERROR user_not_found - the intermittent e2e failures of 2026-10-04)
+  await page.waitForFunction(u => {
+    const h = document.getElementById('username')
+    return !h || h.type !== 'hidden' || h.value.toLowerCase().startsWith(u.toLowerCase().split('@')[0] + '@')
+  }, user, { timeout: 15_000 })
   await pw.press('Enter')
   await page.waitForURL(u => u.origin === new URL(baseURL).origin, { timeout: 45_000, waitUntil: 'commit' })
   await expect(page).not.toHaveURL(/\/oauth2\/|\/dex\//)
