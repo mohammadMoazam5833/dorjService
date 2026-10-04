@@ -209,7 +209,7 @@ function Observability() {
 }
 
 const BIG_TRACE = 300
-const MAX_TRACE_SPANS = 50000
+const MAX_TRACE_SPANS = 20000 // search undercounts giant traces (a ~240k-span one showed 25k)
 const MAX_ROWS = 800
 
 function Traces() {
