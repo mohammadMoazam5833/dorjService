@@ -37,9 +37,8 @@ test('user: every page loads real data from goodarzi', async ({ page }) => {
   expect(fiveXX, JSON.stringify(fiveXX)).toEqual([])
   expect(seen.some(s => s.path === '/api/notebooks' && s.status === 200)).toBe(true)
   expect(await page.evaluate(() => window.__DORJ_MOCK_API__ === true)).toBe(false)
-  // admin link only for admins
-  await page.locator('.uw-trigger').click()
-  const adminLinks = await page.locator('a[href="#/admin-panel"]').count()
+  // the sidebar shows the admin panel link only to admins
+  const adminLinks = await page.locator('.drawer a[href="#/admin-panel"]').count()
   const isAdmin = (await browserGet(page, '/admin-panel/api/admin/whoami')).status === 200
   expect(adminLinks > 0).toBe(isAdmin)
 })
@@ -64,15 +63,14 @@ test('admin: admin panel lists load', async ({ page }) => {
 
 test('logout ends the goodarzi session', async ({ page }) => {
   await login(page, G, process.env.E2E_USER, process.env.E2E_PASS)
-  // the menu's sign-out goes to /oauth2/sign_out?rd=%2F; assert the cleared session without
+  // the sidebar's sign-out goes to /oauth2/sign_out?rd=%2F; assert the cleared session without
   // following rd (prompt=none + live Keycloak SSO session would log straight back in)
-  await page.locator('.uw-trigger').click()
   const [req] = await Promise.all([
     page.waitForRequest(r => r.url().includes('/oauth2/sign_out')),
-    page.locator('.uw-item.danger').click(),
+    page.locator('.acc-logout').click(),
   ])
   expect(new URL(req.url()).search).toBe('?rd=%2F')
-  await page.goto(G + '/#/help', { waitUntil: 'commit' }).catch(() => {})
+  await page.goto(G + '/#/usage', { waitUntil: 'commit' }).catch(() => {})
   await browserGet(page, '/oauth2/sign_out?rd=%2F')
   expect([401, 403]).toContain((await browserGet(page, '/api/resource-usage')).status)
 })

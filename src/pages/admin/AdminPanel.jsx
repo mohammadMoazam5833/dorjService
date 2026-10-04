@@ -95,10 +95,10 @@ export default function AdminPanel() {
   const page = allowed && (allowed.includes(picked) ? picked : allowed[0])
   const setPage = id => { setMenuOpen(false); window.location.hash = `#/admin-panel?tab=${id}` }
 
-  if (!who) return <AppShell active=""><p style={{ padding: 24 }}><Spinner label="در حال بارگذاری" text /></p></AppShell>
+  if (!who) return <AppShell active="پنل مدیریت"><p style={{ padding: 24 }}><Spinner label="در حال بارگذاری" text /></p></AppShell>
   if (!allowed.length) {
     return (
-      <AppShell active="">
+      <AppShell active="پنل مدیریت">
         <div className="paper-card section" style={{ margin: 24, padding: 24 }}>
           <h2>دسترسی ندارید</h2>
           <p>پنل مدیریت فقط برای مدیران پلتفرم در دسترس است.</p>
@@ -109,7 +109,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <AppShell active="" admin>
+    <AppShell active="پنل مدیریت" admin>
       <div className="admin-layout">
 
         <aside className={`admin-sidenav ${mini ? 'mini' : ''} ${menuOpen ? 'm-open' : ''}`}>

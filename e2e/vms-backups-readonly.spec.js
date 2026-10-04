@@ -42,9 +42,8 @@ test('backups page lists backups and restores', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'سابقه‌ی بازیابی' })).toBeVisible()
   await expect.poll(() => seen.length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2)
   expect(seen.every(s => s === 200)).toBe(true)
-  // user menu entry leads here
+  // the sidebar entry leads here
   await page.goto(`${G}/#/`)
-  await page.locator('.uw-trigger').click()
-  await page.locator('a.uw-item[href="#/backups"]').click()
+  await page.locator('.drawer a[href="#/backups"]').click()
   await expect(page).toHaveURL(/#\/backups/)
 })

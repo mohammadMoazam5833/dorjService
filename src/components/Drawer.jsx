@@ -2,8 +2,12 @@ import { useState, useRef, useEffect } from 'react'
 import { useIsMobile } from '../lib/useMedia.js'
 import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
+import AccountPanel from './AccountPanel.jsx'
+import { useSession } from '../lib/session.js'
 import './Drawer.css'
 
+// Destinations live in the sidebar; account actions and display preferences in its foot
+// (AccountPanel). The help pages moved to the login page's documentation panel.
 const NAV = [
   {
     group: 'فضای کار',
@@ -12,20 +16,22 @@ const NAV = [
       { label: 'نوت‌بوک‌ها',        icon: 'book',       route: 'notebooks' },
       { label: 'فضاهای ذخیره‌سازی', icon: 'storage',    route: 'volumes' },
       { label: 'ماشین‌های مجازی',   icon: 'memory',     route: 'vms' },
+      { label: 'بکاپ‌ها',           icon: 'backup',     route: 'backups' },
     ],
   },
+  { group: 'گزارش‌ها', items: [{ label: 'مصرف', icon: 'assessment', route: 'usage' }] },
   {
-    group: 'گزارش‌ها',
+    group: 'ارتباطات',
     items: [
-      { label: 'مصرف', icon: 'assessment', route: 'usage' },
+      { label: 'ایمیل',          icon: 'mail',  route: 'mail' },
+      { label: 'مدیریت همکاران', icon: 'group', route: 'manage-users' },
     ],
   },
+  { group: 'مدیریت', admin: true, items: [{ label: 'پنل مدیریت', icon: 'shield', route: 'admin-panel' }] },
 ]
 
-const BOTTOM = [
-  { label: 'ایمیل', icon: 'mail', route: 'mail' },
-  { label: 'راهنما', icon: 'info', route: 'help' },
-]
+const MINI_KEY = 'dorj.drawer.mini'
+const readMini = () => { try { return localStorage.getItem(MINI_KEY) === '1' } catch { return false } }
 
 function NavGroup({ group, items, active, mini }) {
   const [open, setOpen] = useState(true)
@@ -102,53 +108,44 @@ function NavGroup({ group, items, active, mini }) {
 }
 
 export default function Drawer({ active, mobileOpen = false, onClose }) {
-  const [miniPref, setMini] = useState(false)
+  const [miniPref, setMiniPref] = useState(readMini)
+  const setMini = f => setMiniPref(m => { const v = f(m); try { localStorage.setItem(MINI_KEY, v ? '1' : '0') } catch { /* private mode */ } return v })
   const mobile = useIsMobile()
   const mini = miniPref && !mobile // the off-canvas phone drawer always shows labels
+  const { isAdmin } = useSession()
+  const groups = NAV.filter(g => !g.admin || isAdmin)
 
   return (
     <>
     {mobile && mobileOpen && <div className="drawer-backdrop" onClick={onClose} />}
     <aside className={`drawer ${mini ? 'mini' : ''} ${mobileOpen ? 'm-open' : ''}`} aria-hidden={mobile && !mobileOpen ? true : undefined}>
 
-      <figure className="logo">
-        {mini
-          ? <Logo variant="light" height={30} showWord={false} />
-          : <Logo variant="light" height={34} />}
-      </figure>
+      <div className="drawer-head">
+        <a className="logo" href="#/" aria-label="خانه">
+          {mini
+            ? <Logo variant="light" height={32} showWord={false} />
+            : <Logo variant="light" height={34} />}
+        </a>
+        {!mobile && (
+          <button className="drawer-toggle" type="button" onClick={() => setMini(m => !m)}
+            title={mini ? 'باز کردن منو' : 'جمع کردن منو'} aria-label={mini ? 'باز کردن منو' : 'جمع کردن منو'} aria-expanded={!mini}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+              <rect x="4" y="4.5" width="16" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M15 4.5v15" stroke="currentColor" strokeWidth="1.6" />
+              <path d={mini ? 'M10.5 9 8 12l2.5 3' : 'M8 9l2.5 3L8 15'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       <nav className="drawer-nav">
-        {NAV.map(({ group, items }) => (
+        {groups.map(({ group, items }) => (
           <NavGroup key={group} group={group} items={items} active={active} mini={mini} />
         ))}
       </nav>
 
       <div className={`drawer-bottom ${mini ? 'mini' : ''}`}>
-        <div className="drawer-divider" />
-        {BOTTOM.map(it => {
-          const sel = active === it.label
-          return mini ? (
-            <a key={it.label} href={`#/${it.route}`} title={it.label}>
-              <div className={`menu-item mini ${sel ? 'iron-selected' : ''}`}>
-                <Icon name={it.icon} size={16} color={sel ? 'var(--nav-active)' : 'currentColor'} />
-              </div>
-            </a>
-          ) : (
-            <a key={it.label} href={`#/${it.route}`}>
-              <div className={`menu-item ${sel ? 'iron-selected' : ''}`}>
-                <Icon name={it.icon} size={16} color={sel ? 'var(--nav-active)' : 'currentColor'} />
-                <span>{it.label}</span>
-              </div>
-            </a>
-          )
-        })}
-        <button className="drawer-toggle" onClick={() => setMini(m => !m)} title={mini ? 'بازکردن منو' : 'بستن منو'}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            {mini
-              ? <path d="M8 5v14l11-7z" />
-              : <path d="M16 5v14L5 12z" />}
-          </svg>
-        </button>
+        <AccountPanel mini={mini} />
       </div>
     </aside>
     </>
