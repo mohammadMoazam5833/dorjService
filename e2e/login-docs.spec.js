@@ -1,7 +1,15 @@
 import { test, expect } from '@playwright/test'
 
 // Keycloak dorj-v3 login page: the documentation panel opens, filters and closes, desktop + phone.
-for (const [w, h, tag] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) test(`login page documentation panel (${tag})`, async ({ page }) => {
+test('phones get only the sign-in panel (no top bar, docs or hero)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('https://platform.isigpu.local/')
+  await expect(page.locator('input[type=password]')).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.lg-topbar')).toBeHidden()
+  await expect(page.locator('.lg-brand')).toBeHidden()
+})
+
+for (const [w, h, tag] of [[1440, 900, 'desktop'], [820, 1180, 'tablet']]) test(`login page documentation panel (${tag})`, async ({ page }) => {
   const errs = []
   page.on('pageerror', e => errs.push(e.message))
   await page.setViewportSize({ width: w, height: h })
