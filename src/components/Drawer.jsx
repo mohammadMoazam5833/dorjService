@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useIsMobile } from '../lib/useMedia.js'
 import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
 import './Drawer.css'
@@ -100,11 +101,15 @@ function NavGroup({ group, items, active, mini }) {
   )
 }
 
-export default function Drawer({ active }) {
-  const [mini, setMini] = useState(false)
+export default function Drawer({ active, mobileOpen = false, onClose }) {
+  const [miniPref, setMini] = useState(false)
+  const mobile = useIsMobile()
+  const mini = miniPref && !mobile // the off-canvas phone drawer always shows labels
 
   return (
-    <aside className={`drawer ${mini ? 'mini' : ''}`}>
+    <>
+    {mobile && mobileOpen && <div className="drawer-backdrop" onClick={onClose} />}
+    <aside className={`drawer ${mini ? 'mini' : ''} ${mobileOpen ? 'm-open' : ''}`} aria-hidden={mobile && !mobileOpen ? true : undefined}>
 
       <figure className="logo">
         {mini
@@ -146,5 +151,6 @@ export default function Drawer({ active }) {
         </button>
       </div>
     </aside>
+    </>
   )
 }

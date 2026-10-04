@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useIsMobile } from '../../lib/useMedia.js'
 import AppShell from '../../components/AppShell.jsx'
 import Icon from '../../components/Icon.jsx'
 import Profiles from './Profiles.jsx'
@@ -74,6 +75,8 @@ function renderPage(id) {
   }
 }
 
+const tabFromHash = () => new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab')
+
 function labelOf(id) {
   for (const s of SECTIONS) for (const it of s.items) if (it.id === id) return it.label
   return ''
@@ -82,10 +85,15 @@ function labelOf(id) {
 export default function AdminPanel() {
   const who = useWhoami()
   const allowed = who ? visibleTabs(who, PANEL_TABS) : null
-  const [picked, setPicked] = useState(null)
-  const [mini, setMini] = useState(false)
+  // the tab lives in the URL (#/admin-panel?tab=users) so refresh, Back and shared links keep it
+  const [picked, setPicked] = useState(tabFromHash)
+  useEffect(() => { const f = () => setPicked(tabFromHash()); window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f) }, [])
+  const [miniPref, setMini] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const mobile = useIsMobile()
+  const mini = miniPref && !mobile
   const page = allowed && (allowed.includes(picked) ? picked : allowed[0])
-  const setPage = setPicked
+  const setPage = id => { setMenuOpen(false); window.location.hash = `#/admin-panel?tab=${id}` }
 
   if (!who) return <AppShell active=""><p style={{ padding: 24 }}><Spinner label="در حال بارگذاری" text /></p></AppShell>
   if (!allowed.length) {
@@ -104,13 +112,13 @@ export default function AdminPanel() {
     <AppShell active="" admin>
       <div className="admin-layout">
 
-        <aside className={`admin-sidenav ${mini ? 'mini' : ''}`}>
+        <aside className={`admin-sidenav ${mini ? 'mini' : ''} ${menuOpen ? 'm-open' : ''}`}>
           <div className="admin-sidenav-top">
-            {!mini && <span className="admin-sidenav-title">مدیریت</span>}
+            {!mini && <span className="admin-sidenav-title">مدیریت{mobile && <> · <b>{labelOf(page)}</b></>}</span>}
             <button
               className="asn-toggle"
               type="button"
-              onClick={() => setMini(m => !m)}
+              onClick={() => (mobile ? setMenuOpen(o => !o) : setMini(m => !m))}
               title={mini ? 'باز کردن منوی مدیریت' : 'بستن منوی مدیریت'}
               aria-label={mini ? 'باز کردن منوی مدیریت' : 'بستن منوی مدیریت'}
             aria-expanded={!mini}
