@@ -10,7 +10,7 @@ globalThis.fetch = async (url, init) => {
   return { ok: r[0] < 300, status: r[0], json: async () => r[1] }
 }
 const http = await import('../src/lib/http.js')
-const { loadSession, initialsOf, changePassword, LOGOUT_URL } = await import('../src/lib/session.js')
+const { loadSession, initialsOf, changePassword, logoutUrl } = await import('../src/lib/session.js')
 
 beforeEach(() => { http._resetForTests(); for (const k of Object.keys(routes)) delete routes[k] })
 
@@ -51,5 +51,8 @@ test('changePassword sends the backend contract and reports its message', async 
   assert.equal(sent.url, '/api/change-password')
   assert.deepEqual(JSON.parse(sent.init.body), { currentPassword: 'old', newPassword: 'new' })
   assert.deepEqual(r, { ok: false, message: 'Invalid current password' })
-  assert.equal(LOGOUT_URL, '/oauth2/sign_out?rd=%2F')
+  // ends the Keycloak SSO session first, then clears oauth2-proxy's cookie on this host
+  assert.equal(logoutUrl('https://platform.isigpu.local'),
+    'https://identity.isigpu.local/realms/dorj/protocol/openid-connect/logout?client_id=dex&post_logout_redirect_uri=' +
+    encodeURIComponent('https://platform.isigpu.local/oauth2/sign_out'))
 })

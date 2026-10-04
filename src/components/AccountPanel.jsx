@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import Icon from './Icon.jsx'
 import Spinner from './Spinner.jsx'
 import { usePrefs } from '../lib/prefs.jsx'
-import { useSession, initialsOf, changePassword, LOGOUT_URL } from '../lib/session.js'
+import { useSession, initialsOf, changePassword, logoutUrl } from '../lib/session.js'
 import { notifySuccess } from '../lib/notify.js'
 import './UserWidget.css'
 
@@ -66,7 +66,7 @@ export default function AccountPanel({ mini }) {
     document.addEventListener('mousedown', h); document.addEventListener('keydown', k)
     return () => { document.removeEventListener('mousedown', h); document.removeEventListener('keydown', k) }
   }, [open])
-  const logout = () => { window.location.href = LOGOUT_URL }
+  const logout = () => { window.location.href = logoutUrl() }
 
   return (
     <div className={`acc ${mini ? 'mini' : ''}`} ref={ref}>

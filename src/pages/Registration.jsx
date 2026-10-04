@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { apiPost } from '../lib/api.js'
 import { getJson } from '../lib/http.js'
 import { validNamespace, suggestNamespace } from '../lib/workgroup.js'
-import { LOGOUT_URL } from '../lib/session.js'
+import { logoutUrl } from '../lib/session.js'
 import { Err, Field } from './admin/kit.jsx'
 import Logo from '../components/Logo.jsx'
 import './Registration.css'
@@ -38,7 +38,7 @@ export default function Registration({ status, onDone }) {
         {!status.registrationFlowAllowed ? <>
           <h2>هنوز فضای کاری ندارید</h2>
           <p>حساب <bdi dir="ltr">{status.user}</bdi> وارد شده است، اما هنوز فضای کاری (پروفایل) برای آن ساخته نشده. فضای کاری را مدیر پلتفرم هنگام ثبت‌نام کاربر می‌سازد؛ با مدیر پلتفرم تماس بگیرید.</p>
-          <div className="rg-actions"><button className="ak-btn" onClick={onDone}>بررسی دوباره</button><a className="ak-btn" href={LOGOUT_URL}>خروج</a></div>
+          <div className="rg-actions"><button className="ak-btn" onClick={onDone}>بررسی دوباره</button><a className="ak-btn" href={logoutUrl()}>خروج</a></div>
         </> : step === 0 ? <>
           <h2>خوش آمدید</h2>
           <p>برای استفاده از پلتفرم باید یک فضای کاری (namespace) برای حساب شما ساخته شود. مراحل را دنبال کنید.</p>

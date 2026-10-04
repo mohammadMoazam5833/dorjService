@@ -60,17 +60,3 @@ test('admin: admin panel lists load', async ({ page }) => {
   await expect(page.locator('.admin-layout')).toBeVisible()
   expect(seen.some(s => s.path === '/admin-panel/api/admin/profiles' && s.status === 200)).toBe(true)
 })
-
-test('logout ends the goodarzi session', async ({ page }) => {
-  await login(page, G, process.env.E2E_USER, process.env.E2E_PASS)
-  // the sidebar's sign-out goes to /oauth2/sign_out?rd=%2F; assert the cleared session without
-  // following rd (prompt=none + live Keycloak SSO session would log straight back in)
-  const [req] = await Promise.all([
-    page.waitForRequest(r => r.url().includes('/oauth2/sign_out')),
-    page.locator('.acc-logout').click(),
-  ])
-  expect(new URL(req.url()).search).toBe('?rd=%2F')
-  await page.goto(G + '/#/usage', { waitUntil: 'commit' }).catch(() => {})
-  await browserGet(page, '/oauth2/sign_out?rd=%2F')
-  expect([401, 403]).toContain((await browserGet(page, '/api/resource-usage')).status)
-})

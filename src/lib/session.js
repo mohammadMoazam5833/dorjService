@@ -3,7 +3,14 @@ import { getJson, send } from './http.js'
 
 // Identity comes from the real backends; the namespace is whatever Profile the user owns
 // (kubeflow-resource-usage resolve_namespace()), there is no ?ns= switch server-side.
-export const LOGOUT_URL = '/oauth2/sign_out?rd=%2F'
+// Sign-out must end the Keycloak SSO session, not only oauth2-proxy's cookie: with just
+// /oauth2/sign_out the next request silently logs straight back in (prompt=none on a live Keycloak
+// session) - the button looked dead. Keycloak first (oauth2-proxy drops a cross-origin rd), then
+// this host's /oauth2/sign_out clears the cookie and lands on the login page. Same chain as the
+// old platform UI's auth.js (AUTH-003).
+export const logoutUrl = (origin = window.location.origin) =>
+  'https://identity.isigpu.local/realms/dorj/protocol/openid-connect/logout?client_id=dex' +
+  '&post_logout_redirect_uri=' + encodeURIComponent(`${origin}/oauth2/sign_out`)
 
 export async function loadSession() {
   const [who, ru, adm] = await Promise.all([
