@@ -48,7 +48,12 @@ export default function Logo({ variant = 'light', height = 40, showWord = true }
   )
 
   // admin-panel branding (/api/branding) overrides the bundled mark
-  if (logoUri) return <img src={logoUri} alt={brandName || 'logo'} style={{ height: m, width: 'auto', display: 'block' }} />
+  if (logoUri) {
+    const img = <img src={logoUri} alt={brandName || 'logo'} style={{ height: m, width: 'auto', display: 'block', maxWidth: 'none' }} />
+    // collapsed sidebar: only the first letter of the wordmark (the left square of the 3:1 logo)
+    if (!showWord) return <span dir="ltr" style={{ display: 'block', width: m, height: m, overflow: 'hidden', flexShrink: 0 }}>{img}</span>
+    return img
+  }
 
   if (!showWord) return Mark
 
