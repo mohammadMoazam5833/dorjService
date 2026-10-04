@@ -177,4 +177,6 @@
   .ak-card { padding: 14px; border-radius: 12px; }
   .ak-card table.ak-table { display: block; overflow-x: auto; white-space: nowrap; }
   .ak-modal { padding: 18px; }
+  .ak-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .ak-tabs button { white-space: nowrap; flex: none; }
 }
