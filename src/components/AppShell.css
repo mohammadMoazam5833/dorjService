@@ -43,3 +43,10 @@
   .page-body { padding: 10px 12px 18px; }
   .title-row { padding: 14px 12px 4px; flex-wrap: wrap; }
 }
+@media (max-width: 860px) {
+  .app-search-btn { flex: none; }
+  .ns-quota-strip, .ns-quota-sep { display: none !important; }
+  .ns-root { min-width: 0; flex: 0 1 auto; }
+  .uw-name { display: none; }
+  .drawer:not(.m-open) { box-shadow: none; }
+}

@@ -190,3 +190,11 @@ button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
 .dash-recent li { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
 .dash-recent a { color: #0c1a33; text-decoration: none; font-weight: 600; }
 .dash-recent a:hover { color: #0d9488; }
+
+/* phones: dashboard stacks into one column */
+@media (max-width: 860px) {
+  .dash-view { padding: 10px; }
+  .dash-grid { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-rows: auto; grid-template-areas: none; }
+  .dash-grid > * { grid-area: auto !important; min-height: 0; }
+  .dash-tiles { grid-template-columns: 1fr 1fr; }
+}
