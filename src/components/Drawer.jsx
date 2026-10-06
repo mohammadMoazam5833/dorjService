@@ -12,7 +12,6 @@ const NAV = [
   {
     group: 'فضای کار',
     items: [
-      { label: 'خانه',              icon: 'home',       route: '' },
       { label: 'نوت‌بوک‌ها',        icon: 'book',       route: 'notebooks' },
       { label: 'فضاهای ذخیره‌سازی', icon: 'storage',    route: 'volumes' },
       { label: 'ماشین‌های مجازی',   icon: 'memory',     route: 'vms' },
@@ -121,7 +120,7 @@ export default function Drawer({ active, mobileOpen = false, onClose }) {
     <aside className={`drawer ${mini ? 'mini' : ''} ${mobileOpen ? 'm-open' : ''}`} aria-hidden={mobile && !mobileOpen ? true : undefined}>
 
       <div className="drawer-head">
-        <a className="logo" href="#/" aria-label="خانه">
+        <a className="logo" href="#/" aria-label="دُرج — خانه">
           {mini
             ? <Logo variant="light" height={32} showWord={false} />
             : <Logo variant="light" height={34} />}

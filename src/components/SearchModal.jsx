@@ -4,7 +4,6 @@ import { useApi } from '../lib/api.js'
 import './SearchModal.css'
 
 const PAGES = [
-  { label: 'خانه',               sub: 'داشبورد',          icon: '🏠', route: '' },
   { label: 'نوت‌بوک‌ها',          sub: 'فضای کار',          icon: '📒', route: 'notebooks' },
   { label: 'فضاهای ذخیره‌سازی',   sub: 'فضای کار',          icon: '💾', route: 'volumes' },
   { label: 'ماشین‌های مجازی',      sub: 'فضای کار',          icon: '🖥️', route: 'vms' },
