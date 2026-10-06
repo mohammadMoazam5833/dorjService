@@ -24,31 +24,104 @@ function PasswordModal({ onClose }) {
   const [n2, setN2] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const save = async () => {
+  const [visible, setVisible] = useState({ current: false, next: false, repeat: false })
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape' && !busy) onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [busy, onClose])
+
+  const checks = [
+    { label: 'حداقل ۸ نویسه', ok: n1.length >= 8 },
+    { label: 'حرف و عدد', ok: /[a-zA-Z]/.test(n1) && /\d/.test(n1) },
+    { label: 'نماد یا حروف بزرگ/کوچک', ok: /[^a-zA-Z0-9]/.test(n1) || (/[a-z]/.test(n1) && /[A-Z]/.test(n1)) },
+  ]
+  const score = !n1 ? 0 : checks.filter(c => c.ok).length
+  const strengthText = ['خیلی ضعیف', 'ضعیف', 'متوسط', 'قوی'][score]
+  const strengthClass = ['bad', 'bad', 'mid', 'good'][score]
+  const canSave = !busy && cur && n1.length >= 8 && n1 === n2
+
+  const save = async e => {
+    e.preventDefault()
+    if (!canSave) return
     setBusy(true); setErr('')
     const r = await changePassword(cur, n1)
     setBusy(false)
     if (!r.ok) { setErr(r.message || 'تغییر گذرواژه ناموفق بود.'); return }
     notifySuccess('گذرواژه تغییر کرد'); onClose()
   }
+
+  const Eye = ({ on, onClick }) => (
+    <button type="button" className="pw-eye" onClick={onClick} aria-label={on ? 'پنهان کردن گذرواژه' : 'نمایش گذرواژه'} title={on ? 'پنهان کردن' : 'نمایش'}>
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {on ? <>
+          <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" /><circle cx="12" cy="12" r="2.8" /><path d="M4 20 20 4" />
+        </> : <>
+          <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" /><circle cx="12" cy="12" r="2.8" />
+        </>}
+      </svg>
+    </button>
+  )
+
   return (
     <>
-      <div className="uw-backdrop" onClick={busy ? undefined : onClose} />
-      <div className="uw-modal" dir="rtl" role="dialog" aria-modal="true" aria-label="تغییر گذرواژه">
-        <h2 className="uw-modal-title">تغییر گذرواژه</h2>
-        <label className="uw-field-label">گذرواژه فعلی</label>
-        <input className="uw-field" type="password" dir="ltr" autoFocus autoComplete="current-password" value={cur} onChange={e => setCur(e.target.value)} />
-        <label className="uw-field-label">گذرواژه جدید</label>
-        <input className="uw-field" type="password" dir="ltr" autoComplete="new-password" value={n1} onChange={e => setN1(e.target.value)} />
-        <label className="uw-field-label">تکرار گذرواژه جدید</label>
-        <input className="uw-field" type="password" dir="ltr" autoComplete="new-password" value={n2} onChange={e => setN2(e.target.value)} />
-        {n2 && n1 !== n2 && <p className="uw-error" role="alert">تکرار گذرواژه یکسان نیست.</p>}
-        {err && <p className="uw-error" role="alert" dir="auto">{err}</p>}
-        <div className="uw-modal-actions">
-          <button className="uw-btn-sec" onClick={onClose} disabled={busy}>انصراف</button>
-          <button className="uw-btn-pri" onClick={save} disabled={busy || !cur || !n1 || n1 !== n2}>{busy ? <Spinner label="در حال ذخیره" /> : 'ذخیره'}</button>
+      <div className="pw-backdrop" onClick={busy ? undefined : onClose} />
+      <form className="pw-modal" dir="rtl" role="dialog" aria-modal="true" aria-labelledby="pw-title" onSubmit={save}>
+        <header className="pw-head">
+          <span className="pw-icon" aria-hidden="true"><Icon name="lock" size={20} /></span>
+          <div className="pw-heading">
+            <h2 id="pw-title">تغییر گذرواژه</h2>
+            <p>گذرواژه‌ی قوی‌تر حساب شما را امن‌تر نگه می‌دارد.</p>
+          </div>
+          <button type="button" className="pw-close" onClick={onClose} disabled={busy} aria-label="بستن">✕</button>
+        </header>
+
+        <div className="pw-body">
+          <div className="pw-field">
+            <label htmlFor="pw-current">گذرواژه فعلی</label>
+            <div className="pw-input">
+              <input id="pw-current" type={visible.current ? 'text' : 'password'} dir="ltr" autoFocus autoComplete="current-password" placeholder="••••••••" value={cur} onChange={e => setCur(e.target.value)} />
+              <Eye on={visible.current} onClick={() => setVisible(v => ({ ...v, current: !v.current }))} />
+            </div>
+          </div>
+
+          <div className="pw-field">
+            <label htmlFor="pw-next">گذرواژه جدید</label>
+            <div className="pw-input">
+              <input id="pw-next" type={visible.next ? 'text' : 'password'} dir="ltr" autoComplete="new-password" placeholder="حداقل ۸ نویسه" value={n1} onChange={e => setN1(e.target.value)} />
+              <Eye on={visible.next} onClick={() => setVisible(v => ({ ...v, next: !v.next }))} />
+            </div>
+            <div className="pw-strength" aria-live="polite">
+              <div className="pw-meter">
+                {[0, 1, 2].map(i => <span key={i} className={i < score ? strengthClass : ''} />)}
+              </div>
+              <span className={`pw-strength-label ${score ? strengthClass : ''}`}>{n1 ? strengthText : 'امنیت'}</span>
+            </div>
+            <ul className="pw-rules">
+              {checks.map(c => <li key={c.label} className={c.ok ? 'ok' : ''}>{c.label}</li>)}
+            </ul>
+          </div>
+
+          <div className="pw-field">
+            <label htmlFor="pw-repeat">تکرار گذرواژه جدید</label>
+            <div className={`pw-input ${n2 && n1 !== n2 ? 'invalid' : ''}`}>
+              <input id="pw-repeat" type={visible.repeat ? 'text' : 'password'} dir="ltr" autoComplete="new-password" placeholder="تکرار دقیق" value={n2} onChange={e => setN2(e.target.value)} />
+              <Eye on={visible.repeat} onClick={() => setVisible(v => ({ ...v, repeat: !v.repeat }))} />
+            </div>
+            {n2 && n1 !== n2 && <p className="pw-error" role="alert">تکرار گذرواژه یکسان نیست.</p>}
+          </div>
+
+          {err && <div className="pw-alert" role="alert">{err}</div>}
         </div>
-      </div>
+
+        <footer className="pw-actions">
+          <button type="button" className="pw-secondary" onClick={onClose} disabled={busy}>انصراف</button>
+          <button type="submit" className="pw-primary" disabled={!canSave}>
+            {busy ? <Spinner label="در حال ذخیره" size={15} /> : 'ذخیره'}
+          </button>
+        </footer>
+      </form>
     </>
   )
 }
