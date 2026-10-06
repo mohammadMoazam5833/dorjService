@@ -49,7 +49,7 @@ function TimeChart({ title, series, hidden, onToggle, longRange, loading }) {
   }, [shown, longRange])
   return (
     <div className="mo-card">
-      {!series.length && !loading ? <div className="mo-empty">داده‌ای نیست</div> : <EChart height={170} option={option} loading={loading} title={title} empty={!shown.length && !loading ? 'همه سری‌ها مخفی‌اند' : undefined} />}
+      {!series.length && !loading ? <EChart height={170} title={title} empty="داده‌ای برای این نمودار موجود نیست" /> : <EChart height={170} option={option} loading={loading} title={title} empty={!shown.length && !loading ? 'همه سری‌ها مخفی‌اند' : undefined} />}
       <div className="mo-legend" dir="ltr">
         {series.map(s => <span key={s.label} className={`mo-legend-item ${hidden.has(s.label) ? 'off' : ''}`} title={s.label} onClick={() => onToggle(s.label)}><i style={{ background: s.color }} />{s.label}</span>)}
       </div>

@@ -25,6 +25,20 @@ function ChartSkeleton({ height, bars = 12 }) {
   )
 }
 
+/** Empty state: a friendly icon + message (not a bare box). */
+function ChartEmpty({ height, message }) {
+  return (
+    <div className="echart-empty" style={{ height }}>
+      <svg viewBox="0 0 48 48" width="36" height="36" className="echart-empty-art" aria-hidden="true">
+        {/* broken / flat line hint */}
+        <path d="M4 36 L14 26 L22 31 L30 20 L36 25 L44 15" fill="none" stroke="#c4cdd8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity=".55" />
+        <circle cx="44" cy="15" r="2.5" fill="#e8a317" opacity=".7" />
+      </svg>
+      <span className="echart-empty-label">{message === true ? 'داده‌ای برای این بازه موجود نیست' : message}</span>
+    </div>
+  )
+}
+
 export default function EChart({ option, height = 160, className = '', onEvents, empty, loading, title, subtitle, notMerge = true }) {
   const ref = useRef(null)
   const chartRef = useRef(null)
@@ -57,9 +71,9 @@ export default function EChart({ option, height = 160, className = '', onEvents,
 
   if (empty) {
     return (
-      <div className={`echart-empty ${className}`} style={{ height }}>
-        <span className="echart-empty-icon">📉</span>
-        <span>{empty === true ? 'داده‌ای برای این بازه موجود نیست' : empty}</span>
+      <div className={`echart-wrap ${className}`}>
+        {title && <div className="echart-head"><span className="echart-title">{title}</span>{subtitle && <span className="echart-subtitle">{subtitle}</span>}</div>}
+        <ChartEmpty height={height} message={empty} />
       </div>
     )
   }
