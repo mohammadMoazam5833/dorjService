@@ -22,8 +22,8 @@ const USAGE_COLS = [
 
 export default function Dashboard() {
   const { data: sum, error: sumErr } = useApi('/api/dashboard-summary')
-  const { data: usage } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
-  const { data: cost } = useApi('/api/dashboard-cost', null, [], adaptCost)
+  const { data: usage, loading: usageLoading } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
+  const { data: cost, loading: costLoading } = useApi('/api/dashboard-cost', null, [], adaptCost)
   const { data: nbs } = useApi('/api/notebooks', [], [], adaptNotebooks)
   const { data: ru } = useApi('/api/resource-usage')
   const recent = (nbs || []).slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5)
@@ -85,9 +85,10 @@ export default function Dashboard() {
                 const unit = col.key === 'cpu_cores' ? 'هسته' : 'GiB'
                 return (
                   <div key={col.key} className="chart-col">
-                    <div className="chart-label">{col.label}</div>
                     <EChart
                       height={130}
+                      loading={usageLoading}
+                      title={col.label}
                       empty={data.length < 2 ? true : undefined}
                       option={{
                         color: [CHART_COLORS[0]],
@@ -109,6 +110,9 @@ export default function Dashboard() {
             <div className="cost-chart">
               <EChart
                 height={190}
+                loading={costLoading}
+                title="هزینه روزانه"
+                subtitle={cost?.unit === 'usd' ? 'دلار' : 'میلیون ریال'}
                 empty={(cost?.daily || []).length < 2 ? true : undefined}
                 option={{
                   color: [CHART_COLORS[3]],

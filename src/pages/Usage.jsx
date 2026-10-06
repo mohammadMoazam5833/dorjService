@@ -43,7 +43,7 @@ function StatCard({ label, val, sub, pct, unit }) {
 
 export default function Usage() {
   const { data: u, error } = useApi('/api/resource-usage')
-  const { data: hist } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
+  const { data: hist, loading: histLoading } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
   const [rangeIdx, setRangeIdx] = useState(0)
 
   const slice = arr => (Array.isArray(arr) ? arr : [])
@@ -105,6 +105,7 @@ export default function Usage() {
         <Section title="CPU و حافظه">
           <EChart
             height={160}
+            loading={histLoading}
             empty={cpuData.length < 2 && memData.length < 2 ? true : undefined}
             option={{
               color: [CHART_COLORS[0], CHART_COLORS[1]],
@@ -125,6 +126,7 @@ export default function Usage() {
         <Section title="ذخیره‌سازی">
           <EChart
             height={120}
+            loading={histLoading}
             empty={diskData.length < 2 ? true : undefined}
             option={{
               color: [CHART_COLORS[2]],

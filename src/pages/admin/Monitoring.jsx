@@ -24,7 +24,7 @@ const showStatus = s => (s === BUSY ? <Spinner /> : s)
 
 const fmtNum = v => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : v >= 10 ? String(Math.round(v)) : String(Math.round(v * 100) / 100))
 
-function TimeChart({ title, series, hidden, onToggle, longRange }) {
+function TimeChart({ title, series, hidden, onToggle, longRange, loading }) {
   const shown = useMemo(() => series.filter(s => !hidden.has(s.label)), [series, hidden])
   const fmtT = t => { const d = new Date(t * 1000); return longRange ? d.toLocaleDateString([], { month: 'short', day: 'numeric' }) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   const option = useMemo(() => {
@@ -49,8 +49,7 @@ function TimeChart({ title, series, hidden, onToggle, longRange }) {
   }, [shown, longRange])
   return (
     <div className="mo-card">
-      <div className="mo-title">{title}</div>
-      {!series.length ? <div className="mo-empty">داده‌ای نیست</div> : <EChart height={170} option={option} empty={!shown.length ? 'همه سری‌ها مخفی‌اند' : undefined} />}
+      {!series.length && !loading ? <div className="mo-empty">داده‌ای نیست</div> : <EChart height={170} option={option} loading={loading} title={title} empty={!shown.length && !loading ? 'همه سری‌ها مخفی‌اند' : undefined} />}
       <div className="mo-legend" dir="ltr">
         {series.map(s => <span key={s.label} className={`mo-legend-item ${hidden.has(s.label) ? 'off' : ''}`} title={s.label} onClick={() => onToggle(s.label)}><i style={{ background: s.color }} />{s.label}</span>)}
       </div>
@@ -163,7 +162,7 @@ function Observability() {
         <span className="ak-muted">{showStatus(status)}</span>
       </div>
       <div className="mo-grid">
-        {CHARTS.map(c => <TimeChart key={c.id} title={c.title} series={data[c.id] || []} hidden={getHidden(c.id)} onToggle={l => toggle(c.id, l)} longRange={longRange} />)}
+        {CHARTS.map(c => <TimeChart key={c.id} title={c.title} series={data[c.id] || []} hidden={getHidden(c.id)} onToggle={l => toggle(c.id, l)} longRange={longRange} loading={status === BUSY} />)}
         <div className="mo-card mo-wide">
           <div className="mo-title">کاربران برتر به تفکیک مدل (آخرین {rangeCfg.label})</div>
           {!top.length ? <div className="mo-empty">داده‌ای نیست</div> : <>
@@ -189,7 +188,7 @@ function Observability() {
         </select>
       </div>
       {!sel ? <div className="mo-empty">هیچ استقرار vLLM/SGLang متریک گزارش نمی‌کند</div> : <>
-        <div className="mo-grid">{RCA_CHARTS.map(c => <TimeChart key={c.id} title={c.title} series={rcaData[c.id] || []} hidden={getHidden(`rc-${c.id}`)} onToggle={l => toggle(`rc-${c.id}`, l)} longRange={longRange} />)}</div>
+        <div className="mo-grid">{RCA_CHARTS.map(c => <TimeChart key={c.id} title={c.title} series={rcaData[c.id] || []} hidden={getHidden(`rc-${c.id}`)} onToggle={l => toggle(`rc-${c.id}`, l)} longRange={longRange} loading={status === BUSY} />)}</div>
         <div className="mo-log-wrap">
           <div className="ak-toolbar mo-log-bar">
             <span className="mo-title" style={{ margin: 0 }}>لاگ‌ها (Loki، ۳۰ دقیقه‌ی اخیر)</span>
