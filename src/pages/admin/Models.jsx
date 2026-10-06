@@ -10,6 +10,7 @@ import Spinner, { Loading } from '../../components/Spinner.jsx'
 const RateLimits = lazy(() => import('./RateLimits.jsx'))
 const B = '/admin-panel/api/admin/models'
 const KAGGLE = '/admin-panel/api/admin/kaggle-credentials'
+const HF_TOKEN = '/admin-panel/api/admin/hf-token'
 const ROUTES = '/admin-panel/api/admin/litellm/routes'
 const fresh = p => getJson(`${p}${p.includes('?') ? '&' : '?'}t=${Date.now()}`, { ttlMs: 0 })
 const ENGINES = [['vllm', 'vLLM'], ['sglang', 'SGLang'], ['llamacpp', 'llama.cpp (GGUF)']]
@@ -28,6 +29,7 @@ const ACTIONS = {
   configure_deploy: m => [`${B}/${m.id}/configure-deploy`, 'POST', `استقرار ${m.display_name} آغاز شد`],
   import: () => [`${B}/import`, 'POST', 'وارد شد؛ دانلود آغاز شد'],
   save_kaggle: () => [KAGGLE, 'POST', 'اطلاعات Kaggle ذخیره شد'],
+  save_hf_token: () => [HF_TOKEN, 'POST', 'توکن HuggingFace ذخیره شد'],
   add_route: () => [ROUTES, 'POST', 'مسیر Gateway ذخیره شد'],
   delete_route: r => [`${ROUTES}/${r.id}`, 'DELETE', `مسیر ${r.model_name} حذف شد`],
 }
@@ -54,7 +56,7 @@ function ConfirmAction({ action, target, extra, onClose, onDone }) {
     if (r.error) { setErr(r.error.message); cap.reload(); return }
     notifySuccess(ok); onDone()
   }
-  const title = target?.display_name || target?.model_name || extra?.repo_id || (action === 'save_kaggle' ? 'اطلاعات Kaggle' : '')
+  const title = target?.display_name || target?.model_name || extra?.repo_id || (action === 'save_kaggle' ? 'اطلاعات Kaggle' : action === 'save_hf_token' ? 'توکن HuggingFace' : '')
   return (
     <Modal title={`تأیید: ${title}`} onClose={onClose} busy={busy}
       actions={<><button className="ak-btn" onClick={onClose} disabled={busy}>انصراف</button><button className="ak-btn ak-primary" onClick={submit} disabled={busy}>{busy ? <Spinner label="در حال انجام" /> : 'تأیید'}</button></>}>
@@ -252,6 +254,30 @@ function Kaggle({ act }) {
   )
 }
 
+function HfToken({ act }) {
+  const [configured, setConfigured] = useState(false)
+  const [token, setToken] = useState('')
+  const [err, setErr] = useState('')
+  useEffect(() => { fresh(`${HF_TOKEN}/status`).then(r => setConfigured(!!r.data?.configured)) }, [])
+  const save = () => {
+    setErr('')
+    if (!token.trim()) { setErr('توکن لازم است'); return }
+    act('save_hf_token', null, { token: token.trim() }, () => { setToken(''); fresh(`${HF_TOKEN}/status`).then(r => setConfigured(!!r.data?.configured)) })
+  }
+  return (
+    <div className="ak-card">
+      <h3>توکن HuggingFace</h3>
+      <p className="ak-muted">برای دانلود مدل‌های گیت‌شده لازم است؛ حساب مربوطه باید ابتدا مجوز مدل را در huggingface.co بپذیرد. به‌صورت Secret در Kubernetes ذخیره می‌شود و پس از ذخیره نمایش داده نمی‌شود.</p>
+      <Pill ok={configured}>{configured ? 'تنظیم شده' : 'تنظیم نشده'}</Pill>
+      <div className="ak-row" style={{ marginTop: 10 }}>
+        <Field label="توکن دسترسی HuggingFace"><input className="ak-input" type="password" dir="ltr" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></Field>
+      </div>
+      <Err>{err}</Err>
+      <button className="ak-btn ak-primary" onClick={save}>ذخیره</button>
+    </div>
+  )
+}
+
 function Gateway({ act }) {
   const [data, setData] = useState({ routes: [], available_targets: [] })
   const load = () => fresh(ROUTES).then(r => r.data && setData({ routes: r.data.routes || [], available_targets: r.data.available_targets || [] }))
@@ -355,7 +381,7 @@ export default function Models() {
             <div className="md-grid">{models.filter(m => m.family === current).map(m => <Tile key={m.id} m={m} open={setDetail} act={act} configure={setConfigure} />)}</div>
           )}
           {current === '__search' && <Search act={act} />}
-          {current === '__settings' && <Kaggle act={act} />}
+          {current === '__settings' && <><Kaggle act={act} /><HfToken act={act} /></>}
           {current === '__litellm' && <Gateway act={act} />}
           {current === '__ratelimits' && <Suspense fallback={<Loading />}><RateLimits /></Suspense>}
         </>
