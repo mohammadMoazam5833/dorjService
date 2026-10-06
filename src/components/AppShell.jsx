@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import NsSelector from './NsSelector.jsx'
 import ResourcesWidget from './ResourcesWidget.jsx'
+import HeaderUser from './HeaderUser.jsx'
 import SearchModal from './SearchModal.jsx'
 import Drawer from './Drawer.jsx'
 import ErrorNote from './ErrorNote.jsx'
@@ -45,6 +46,7 @@ export default function AppShell({ active, admin, children }) {
             <kbd className="app-search-kbd">Ctrl K</kbd>
           </button>
           <ResourcesWidget />
+          <HeaderUser />
         </header>
         <main className="main"><ErrorNote error={sessionError} />{children}</main>
       </div>

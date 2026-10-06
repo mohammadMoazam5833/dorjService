@@ -2,12 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useIsMobile } from '../lib/useMedia.js'
 import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
-import AccountPanel from './AccountPanel.jsx'
 import { useSession } from '../lib/session.js'
 import './Drawer.css'
 
-// Destinations live in the sidebar; account actions and display preferences in its foot
-// (AccountPanel). The help pages moved to the login page's documentation panel.
 const NAV = [
   {
     group: 'فضای کار',
@@ -143,9 +140,6 @@ export default function Drawer({ active, mobileOpen = false, onClose }) {
         ))}
       </nav>
 
-      <div className={`drawer-bottom ${mini ? 'mini' : ''}`}>
-        <AccountPanel mini={mini} />
-      </div>
     </aside>
     </>
   )

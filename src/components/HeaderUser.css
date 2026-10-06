@@ -1,0 +1,49 @@
+.hu-root { position: relative; }
+
+.hu-trigger {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: #f8fafc;
+  border-radius: 10px; padding: 0 10px; height: 40px;
+  cursor: pointer; font-family: inherit; color: #1c2b36;
+  transition: background 0.15s, border-color 0.15s;
+}
+.hu-trigger:hover { background: #eef3f8; border-color: #b8cfe0; }
+
+.hu-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488, #1E3A8A);
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.hu-name { font-size: 13px; font-weight: 600; color: #0c1a33; white-space: nowrap; }
+.hu-caret { display: flex; align-items: center; transition: transform 0.18s; color: #56657f; }
+.hu-caret.open { transform: rotate(180deg); }
+
+/* dropdown */
+.hu-pop {
+  position: absolute; top: calc(100% + 8px); inset-inline-end: 0;
+  width: 240px; background: #fff;
+  border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(7,42,82,.14), 0 2px 8px rgba(7,42,82,.07);
+  z-index: 200; padding: 8px;
+}
+.hu-pop-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 8px 6px;
+}
+.hu-pop-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488, #1E3A8A);
+  color: #fff; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.hu-pop-names { display: flex; flex-direction: column; min-width: 0; }
+.hu-pop-names b { font-size: 13.5px; font-weight: 700; color: #0c1a33; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hu-pop-names bdi { font-size: 11px; color: #56657f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; display: block; text-align: left; }
+.hu-pop-title { font-size: 11.5px; color: #8fa3b8; padding: 6px 10px 4px; }
+
+@media (max-width: 860px) {
+  .hu-name, .hu-caret { display: none; }
+  .hu-trigger { padding: 0 6px; border: 0; background: none; }
+}
