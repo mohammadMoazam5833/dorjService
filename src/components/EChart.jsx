@@ -46,22 +46,25 @@ export default function EChart({ option, height = 160, className = '', onEvents,
 
   useEffect(() => { if (option && !loading) setEverLoaded(true) }, [option, loading])
 
-  // mount — the chart div is ALWAYS in the DOM (even under the skeleton), so init always runs
+  // ECharts initializes once, so its container must always stay mounted. Loading and
+  // empty states are overlays; otherwise the first empty render prevents init forever.
   useEffect(() => {
     if (!ref.current) return
     chartRef.current = echarts.init(ref.current, undefined, { renderer: 'canvas' })
-    const ro = new ResizeObserver(() => chartRef.current?.resize())
+    let frame = 0
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => chartRef.current?.resize())
+    })
     ro.observe(ref.current)
-    return () => { ro.disconnect(); chartRef.current?.dispose(); chartRef.current = null }
+    return () => { cancelAnimationFrame(frame); ro.disconnect(); chartRef.current?.dispose(); chartRef.current = null }
   }, [])
 
-  // option updates
   useEffect(() => {
     if (!chartRef.current || !option) return
     chartRef.current.setOption(option, { notMerge })
   }, [option, notMerge])
 
-  // event handlers
   useEffect(() => {
     const chart = chartRef.current
     if (!chart || !onEvents) return
@@ -69,24 +72,16 @@ export default function EChart({ option, height = 160, className = '', onEvents,
     return () => { for (const evt of Object.keys(onEvents || {})) chart.off(evt) }
   }, [onEvents])
 
-  if (empty) {
-    return (
-      <div className={`echart-wrap ${className}`}>
-        {title && <div className="echart-head"><span className="echart-title">{title}</span>{subtitle && <span className="echart-subtitle">{subtitle}</span>}</div>}
-        <ChartEmpty height={height} message={empty} />
-      </div>
-    )
-  }
-
-  // Skeleton is absolutely positioned ON TOP of the chart div (which is always rendered)
-  const showSkeleton = !everLoaded && loading !== false
+  const showSkeleton = !everLoaded && loading === true
+  const showEmpty = !!empty && !showSkeleton
 
   return (
     <div className={`echart-wrap ${className}`}>
       {title && <div className="echart-head"><span className="echart-title">{title}</span>{subtitle && <span className="echart-subtitle">{subtitle}</span>}</div>}
       <div className="echart-body" style={{ height }}>
-        <div ref={ref} className={`echart ${everLoaded && !showSkeleton ? 'echart-in' : ''}`} style={{ height }} dir="ltr" />
+        <div ref={ref} className={`echart ${everLoaded && !showSkeleton && !showEmpty ? 'echart-in' : ''}`} style={{ height }} dir="ltr" />
         {showSkeleton && <ChartSkeleton height={height} />}
+        {showEmpty && <div className="echart-overlay"><ChartEmpty height={height} message={empty} /></div>}
       </div>
     </div>
   )

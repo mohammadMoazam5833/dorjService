@@ -64,7 +64,7 @@ function useHidden() {
 
 function Observability() {
   const [range, setRange] = useState(60)
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState(BUSY)
   const [data, setData] = useState({})
   const [rcaData, setRcaData] = useState({})
   const [aliases, setAliases] = useState(null)
@@ -212,7 +212,7 @@ function Traces() {
   const [ip, setIp] = useState('')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState(BUSY)
   const [trace, setTrace] = useState(null)
   const [collapsed, setCollapsed] = useState(new Set())
   const [zoom, setZoom] = useState(null)

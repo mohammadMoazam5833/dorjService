@@ -51,3 +51,5 @@
   60%  { transform: translateX(100%); }
   100% { transform: translateX(100%); }
 }
+
+.echart-overlay { position: absolute; inset: 0; z-index: 2; }
