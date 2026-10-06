@@ -33,9 +33,9 @@ function PasswordModal({ onClose }) {
   }, [busy, onClose])
 
   const checks = [
-    { label: 'حداقل ۸ نویسه', ok: n1.length >= 8 },
-    { label: 'حرف و عدد', ok: /[a-zA-Z]/.test(n1) && /\d/.test(n1) },
-    { label: 'نماد یا حروف بزرگ/کوچک', ok: /[^a-zA-Z0-9]/.test(n1) || (/[a-z]/.test(n1) && /[A-Z]/.test(n1)) },
+    { label: 'حداقل ۸ نویسه باشد', ok: n1.length >= 8 },
+    { label: 'حداقل یک حرف و یک عدد داشته باشد', ok: /[a-zA-Z]/.test(n1) && /\d/.test(n1) },
+    { label: 'حداقل یک نماد یا ترکیب حروف بزرگ و کوچک داشته باشد', ok: /[^a-zA-Z0-9]/.test(n1) || (/[a-z]/.test(n1) && /[A-Z]/.test(n1)) },
   ]
   const score = !n1 ? 0 : checks.filter(c => c.ok).length
   const strengthText = ['خیلی ضعیف', 'ضعیف', 'متوسط', 'قوی'][score]
