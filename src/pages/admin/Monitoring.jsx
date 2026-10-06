@@ -7,7 +7,7 @@ import { useTable } from './kit.jsx'
 import './monitoring.css'
 import Spinner from '../../components/Spinner.jsx'
 import EChart from '../../components/EChart.jsx'
-import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, baseLegend } from '../../lib/echart-theme.js'
+import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis } from '../../lib/echart-theme.js'
 
 // Port of the platform's admin Monitoring tab: Observability (Prometheus charts, top users,
 // per-model slow-prompt RCA, Loki logs) and Traces (Tempo search + span waterfall). Read-only.
@@ -37,10 +37,9 @@ function TimeChart({ title, series, hidden, onToggle, longRange, loading }) {
     return {
       color: CHART_COLORS,
       tooltip: { ...baseTooltip },
-      grid: { ...baseGrid, left: 46, bottom: 30 },
+      grid: { ...baseGrid, left: 46, bottom: 26 },
       xAxis: baseXAxis(labels, undefined),
       yAxis: { ...baseYAxis(''), axisLabel: { ...baseYAxis('').axisLabel, formatter: fmtNum } },
-      legend: { ...baseLegend(shown.map(s => s.label)), data: shown.map(s => s.label), selected: Object.fromEntries(shown.map(s => [s.label, true])) },
       series: shown.map(s => ({
         name: s.label, type: 'line', showSymbol: false, smooth: 0.2, lineStyle: { width: 1.8 },
         data: s.points.map(([t, v]) => [Math.round((t - t0) / step), v]),
