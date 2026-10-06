@@ -6,6 +6,8 @@ import { wedges } from '../../lib/admin/gpu.js'
 import { useTable } from './kit.jsx'
 import './monitoring.css'
 import Spinner from '../../components/Spinner.jsx'
+import EChart from '../../components/EChart.jsx'
+import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, baseLegend } from '../../lib/echart-theme.js'
 
 // Port of the platform's admin Monitoring tab: Observability (Prometheus charts, top users,
 // per-model slow-prompt RCA, Loki logs) and Traces (Tempo search + span waterfall). Read-only.
@@ -23,38 +25,32 @@ const showStatus = s => (s === BUSY ? <Spinner /> : s)
 const fmtNum = v => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : v >= 10 ? String(Math.round(v)) : String(Math.round(v * 100) / 100))
 
 function TimeChart({ title, series, hidden, onToggle, longRange }) {
-  const W = 600, H = 170, PL = 44, PB = 22, PT = 8
   const shown = useMemo(() => series.filter(s => !hidden.has(s.label)), [series, hidden])
-  const sc = useMemo(() => scaleSeries(shown, { w: W - PL - 8, h: H - PB - PT }), [shown])
-  const [hover, setHover] = useState(null)
   const fmtT = t => { const d = new Date(t * 1000); return longRange ? d.toLocaleDateString([], { month: 'short', day: 'numeric' }) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-  const onMove = e => {
-    if (sc.empty) return
-    const r = e.currentTarget.getBoundingClientRect()
-    const fx = ((e.clientX - r.left) / r.width * W - PL) / (W - PL - 8)
-    if (fx < 0 || fx > 1) { setHover(null); return }
-    const t = sc.t0 + fx * (sc.t1 - sc.t0)
-    const vals = shown.map(s => {
-      let best = null
-      for (const p of s.points) if (!best || Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p
-      return best && { label: s.label, color: s.color, v: best[1], t: best[0] }
-    }).filter(Boolean)
-    setHover({ x: PL + fx * (W - PL - 8), t: vals[0]?.t ?? t, vals })
-  }
+  const option = useMemo(() => {
+    if (!shown.length) return null
+    const t0 = Math.min(...shown.flatMap(s => s.points.map(p => p[0])))
+    const t1 = Math.max(...shown.flatMap(s => s.points.map(p => p[0])))
+    const step = Math.max(1, Math.round((t1 - t0) / 5))
+    const labels = []
+    for (let t = t0; t <= t1; t += step) labels.push(fmtT(t))
+    return {
+      color: CHART_COLORS,
+      tooltip: { ...baseTooltip },
+      grid: { ...baseGrid, left: 46, bottom: 30 },
+      xAxis: baseXAxis(labels, undefined),
+      yAxis: { ...baseYAxis(''), axisLabel: { ...baseYAxis('').axisLabel, formatter: fmtNum } },
+      legend: { ...baseLegend(shown.map(s => s.label)), data: shown.map(s => s.label), selected: Object.fromEntries(shown.map(s => [s.label, true])) },
+      series: shown.map(s => ({
+        name: s.label, type: 'line', showSymbol: false, smooth: 0.2, lineStyle: { width: 1.8 },
+        data: s.points.map(([t, v]) => [Math.round((t - t0) / step), v]),
+      })),
+    }
+  }, [shown, longRange])
   return (
     <div className="mo-card">
       <div className="mo-title">{title}</div>
-      {!series.length ? <div className="mo-empty">داده‌ای نیست</div> : (
-        <div className="mo-plot" dir="ltr">
-          <svg viewBox={`0 0 ${W} ${H}`} className="mo-svg" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
-            {[0, 0.5, 1].map(f => { const y = PT + (H - PB - PT) * (1 - f); return <g key={f}><line x1={PL} x2={W - 8} y1={y} y2={y} className="mo-gl" /><text x={PL - 6} y={y + 4} className="mo-axis" textAnchor="end">{fmtNum(sc.yMax * f)}</text></g> })}
-            {!sc.empty && [0, 0.5, 1].map(f => <text key={f} x={PL + f * (W - PL - 8)} y={H - 6} className="mo-axis" textAnchor={f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}>{fmtT(sc.t0 + f * (sc.t1 - sc.t0))}</text>)}
-            {sc.series.map(s => <polyline key={s.label} fill="none" stroke={s.color} strokeWidth="2" points={s.xy.map(([x, y]) => `${(x + PL).toFixed(1)},${(y + PT).toFixed(1)}`).join(' ')} />)}
-            {hover && <line x1={hover.x} x2={hover.x} y1={PT} y2={H - PB} className="mo-cross" />}
-          </svg>
-          {hover && <div className="mo-tip" style={{ left: `${(hover.x / W) * 100}%` }}><b>{fmtT(hover.t)}</b>{hover.vals.map(v => <div key={v.label}><i style={{ background: v.color }} />{v.label}: {fmtNum(v.v)}</div>)}</div>}
-        </div>
-      )}
+      {!series.length ? <div className="mo-empty">داده‌ای نیست</div> : <EChart height={170} option={option} empty={!shown.length ? 'همه سری‌ها مخفی‌اند' : undefined} />}
       <div className="mo-legend" dir="ltr">
         {series.map(s => <span key={s.label} className={`mo-legend-item ${hidden.has(s.label) ? 'off' : ''}`} title={s.label} onClick={() => onToggle(s.label)}><i style={{ background: s.color }} />{s.label}</span>)}
       </div>

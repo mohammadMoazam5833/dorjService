@@ -1,7 +1,8 @@
 import AppShell from '../components/AppShell.jsx'
 import Tile from '../components/Tile.jsx'
 import Icon from '../components/Icon.jsx'
-import Chart from '../components/Chart.jsx'
+import EChart from '../components/EChart.jsx'
+import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, baseLegend } from '../lib/echart-theme.js'
 import { useApi } from '../lib/api.js'
 import { faNum, rial, fmt } from '../lib/format.js'
 import { adaptUsageHistory, adaptCost } from '../lib/adapters/metrics.js'
@@ -78,23 +79,46 @@ export default function Dashboard() {
             <div className="card-header" />
             <div className="section-title">تاریخچه مصرف (۶ ساعت اخیر)</div>
             <div className="usage-charts">
-              {USAGE_COLS.map(col => (
-                <div key={col.key} className="chart-col">
-                  <div className="chart-label">{col.label}</div>
-                  <Chart
-                    series={[{ color: '#007dfc', data: usage?.[col.key] || [] }]}
-                    height={130}
-                    unit={col.key === 'cpu_cores' ? 'هسته' : 'GiB'}
-                  />
-                </div>
-              ))}
+              {USAGE_COLS.map(col => {
+                const data = usage?.[col.key] || []
+                const labels = data.map((_, i) => `${Math.max(0, Math.round((data.length - 1 - i) * 5 / 60 * 10) / 10)}h`)
+                const unit = col.key === 'cpu_cores' ? 'هسته' : 'GiB'
+                return (
+                  <div key={col.key} className="chart-col">
+                    <div className="chart-label">{col.label}</div>
+                    <EChart
+                      height={130}
+                      empty={data.length < 2 ? true : undefined}
+                      option={{
+                        color: [CHART_COLORS[0]],
+                        tooltip: { ...baseTooltip, valueFormatter: v => `${v} ${unit}` },
+                        grid: { ...baseGrid, left: 44 },
+                        xAxis: baseXAxis(labels, lbl => lbl.replace('.0', '')),
+                        yAxis: baseYAxis(unit),
+                        series: [{ type: 'line', data, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.12 } }],
+                      }}
+                    />
+                  </div>
+                )
+              })}
             </div>
           </div>
           <div className="paper-card section cost" style={{ gridArea: 'cost' }}>
             <div className="card-header" />
             <div className="section-title">هزینه (۳۰ روز اخیر)</div>
             <div className="cost-chart">
-              <Chart series={[{ color: '#E8A317', data: cost?.unit === 'usd' ? (cost?.daily || []) : (cost?.daily || []).map(v => (v == null ? v : v / 1e6)) }]} xLabels={cost?.labels} height={190} unit={cost?.unit === 'usd' ? '$' : 'میلیون ریال'} />
+              <EChart
+                height={190}
+                empty={(cost?.daily || []).length < 2 ? true : undefined}
+                option={{
+                  color: [CHART_COLORS[3]],
+                  tooltip: { ...baseTooltip, valueFormatter: v => cost?.unit === 'usd' ? `$${v}` : `${v} میلیون ریال` },
+                  grid: baseGrid,
+                  xAxis: baseXAxis(cost?.labels || []),
+                  yAxis: baseYAxis(cost?.unit === 'usd' ? '$' : 'میلیون ریال'),
+                  series: [{ type: 'line', data: cost?.unit === 'usd' ? (cost?.daily || []) : (cost?.daily || []).map(v => (v == null ? v : v / 1e6)), smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.15 } }],
+                }}
+              />
             </div>
           </div>
         </div>

@@ -6,7 +6,8 @@ import ErrorNote from '../components/ErrorNote.jsx'
 import Section from '../components/Section.jsx'
 import Card from '../components/Card.jsx'
 import Table, { Cell } from '../components/Table.jsx'
-import Chart from '../components/Chart.jsx'
+import EChart from '../components/EChart.jsx'
+import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, baseLegend } from '../lib/echart-theme.js'
 import { Chip, ChipRow } from '../components/Chip.jsx'
 
 // /api/dashboard-usage-history covers the last 6 h at a 5-minute step (HISTORY_WINDOW_SECONDS);
@@ -102,29 +103,37 @@ export default function Usage() {
 
         {/* CPU + Memory chart */}
         <Section title="CPU و حافظه">
-          <Chart
-            series={[
-              { color: '#2563eb', data: cpuData },
-              { color: '#a855f7', data: memData },
-            ]}
-            unit="GiB / هسته"
-            xLabels={xLabels}
+          <EChart
             height={160}
-            legend={[
-              { color: '#2563eb', label: 'CPU (هسته)' },
-              { color: '#a855f7', label: 'حافظه (GiB)' },
-            ]}
+            empty={cpuData.length < 2 && memData.length < 2 ? true : undefined}
+            option={{
+              color: [CHART_COLORS[0], CHART_COLORS[1]],
+              tooltip: { ...baseTooltip },
+              grid: baseGrid,
+              xAxis: baseXAxis(xLabels),
+              yAxis: baseYAxis(''),
+              legend: baseLegend(['CPU (هسته)', 'حافظه (GiB)']),
+              series: [
+                { name: 'CPU (هسته)', type: 'line', data: cpuData, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.1 } },
+                { name: 'حافظه (GiB)', type: 'line', data: memData, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.1 } },
+              ],
+            }}
           />
         </Section>
 
         {/* Disk chart */}
         <Section title="ذخیره‌سازی">
-          <Chart
-            series={[{ color: '#0d9488', data: diskData }]}
-            unit="GiB"
-            xLabels={xLabels}
+          <EChart
             height={120}
-            legend={[{ color: '#0d9488', label: 'فضای ذخیره‌سازی (GiB)' }]}
+            empty={diskData.length < 2 ? true : undefined}
+            option={{
+              color: [CHART_COLORS[2]],
+              tooltip: { ...baseTooltip, valueFormatter: v => `${v} GiB` },
+              grid: { ...baseGrid, bottom: 22 },
+              xAxis: baseXAxis(xLabels),
+              yAxis: baseYAxis('GiB'),
+              series: [{ name: 'فضای ذخیره‌سازی (GiB)', type: 'line', data: diskData, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.12 } }],
+            }}
           />
         </Section>
 
