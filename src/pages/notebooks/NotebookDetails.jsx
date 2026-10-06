@@ -6,7 +6,7 @@ import ErrorNote from '../../components/ErrorNote.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import Spinner, { Loading } from '../../components/Spinner.jsx'
 
-const TABS = [['overview', 'نمای کلی'], ['logs', 'گزارش‌ها'], ['yaml', 'YAML'], ['ssh', 'SSH'], ['console', 'کنسول']]
+const TABS = [['overview', 'نمای کلی'], ['logs', 'گزارش‌ها'], ['ssh', 'SSH'], ['console', 'کنسول']]
 const enc = encodeURIComponent
 // xterm is only fetched when a console tab actually opens
 const Terminal = lazy(() => import('../../components/Terminal.jsx'))
@@ -46,11 +46,6 @@ function Logs({ name }) {
       {error ? <ErrorNote error={error} /> : loading ? <Loading /> : <pre className="nd-pre" dir="ltr">{data?.logs || '(خالی)'}</pre>}
     </>
   )
-}
-
-function Yaml({ name }) {
-  const { data, error, loading } = useApi(`/api/notebooks/${enc(name)}/yaml`)
-  return error ? <ErrorNote error={error} /> : loading ? <Loading /> : <pre className="nd-pre" dir="ltr">{data?.yaml}</pre>
 }
 
 function Ssh({ name }) {
@@ -149,7 +144,6 @@ export default function NotebookDetails({ nb, onClose }) {
         <div className="nd-body">
           {tab === 'overview' && <Overview name={nb.name} />}
           {tab === 'logs' && <Logs name={nb.name} />}
-          {tab === 'yaml' && <Yaml name={nb.name} />}
           {tab === 'ssh' && <Ssh name={nb.name} />}
           {tab === 'console' && running && <ConsoleTab name={nb.name} onOpenSsh={() => setTab('ssh')} />}
         </div>
