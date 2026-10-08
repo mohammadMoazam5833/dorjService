@@ -1,8 +1,10 @@
+import { useMemo, useState } from 'react'
 import AppShell from '../components/AppShell.jsx'
 import Tile from '../components/Tile.jsx'
 import Icon from '../components/Icon.jsx'
 import EChart from '../components/EChart.jsx'
-import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, baseLegend } from '../lib/echart-theme.js'
+import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, formatChartNumber, formatChartTime } from '../lib/echart-theme.js'
+import { usePrefs } from '../lib/prefs.jsx'
 import { useApi } from '../lib/api.js'
 import { faNum, rial, fmt } from '../lib/format.js'
 import { adaptUsageHistory, adaptCost } from '../lib/adapters/metrics.js'
@@ -22,12 +24,19 @@ const USAGE_COLS = [
 
 export default function Dashboard() {
   const { data: sum, error: sumErr } = useApi('/api/dashboard-summary')
-  const { data: usage, loading: usageLoading } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
-  const { data: cost, loading: costLoading } = useApi('/api/dashboard-cost', null, [], adaptCost)
+  const { data: usage, loading: usageLoading, error: usageError, reload: reloadUsage } = useApi('/api/dashboard-usage-history', null, [], adaptUsageHistory)
+  const { data: cost, loading: costLoading, error: costError, reload: reloadCost } = useApi('/api/dashboard-cost', null, [], adaptCost)
   const { data: nbs } = useApi('/api/notebooks', [], [], adaptNotebooks)
   const { data: ru } = useApi('/api/resource-usage')
   const recent = (nbs || []).slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5)
   const c = sum?.cluster || {}
+  const { prefs } = usePrefs()
+  // The API has no requested end timestamp; pin the generated six-hour labels to this render's load.
+  const [usageEnd] = useState(() => Date.now())
+  const usageTimes = useMemo(() => {
+    const count = Math.max((usage?.cpu_cores || []).length, (usage?.memory_gib || []).length, (usage?.storage_gib || []).length)
+    return Array.from({ length: count }, (_, i) => Math.round((usageEnd - (count - 1 - i) * 5 * 60) / 1000))
+  }, [usage, usageEnd])
   const pct = v => (v === null || v === undefined ? '—' : faNum(Number(v).toFixed(1)))
   return (
     <AppShell active="خانه">
@@ -81,19 +90,22 @@ export default function Dashboard() {
             <div className="usage-charts">
               {USAGE_COLS.map(col => {
                 const data = usage?.[col.key] || []
-                const labels = data.map((_, i) => `${Math.max(0, Math.round((data.length - 1 - i) * 5 / 60 * 10) / 10)}h`)
+                const labels = usageTimes.map(t => formatChartTime(t, prefs))
                 const unit = col.key === 'cpu_cores' ? 'هسته' : 'GiB'
                 return (
                   <div key={col.key} className="chart-col">
                     <EChart
                       height={130}
                       loading={usageLoading}
+                      error={usageError}
+                      onRetry={reloadUsage}
                       title={col.label}
+                      subtitle="۵ دقیقه‌ای"
                       empty={data.length < 2 ? true : undefined}
                       option={{
                         color: [CHART_COLORS[0]],
-                        tooltip: { ...baseTooltip, valueFormatter: v => `${v} ${unit}` },
-                        grid: { ...baseGrid, left: 44 },
+                        tooltip: { ...baseTooltip, valueFormatter: v => `${formatChartNumber(v, prefs)} ${unit}` },
+                        grid: baseGrid,
                         xAxis: baseXAxis(labels, lbl => lbl.replace('.0', '')),
                         yAxis: baseYAxis(unit),
                         series: [{ type: 'line', data, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.12 } }],
@@ -111,14 +123,16 @@ export default function Dashboard() {
               <EChart
                 height={190}
                 loading={costLoading}
+                error={costError}
+                onRetry={reloadCost}
                 title="هزینه روزانه"
                 subtitle={cost?.unit === 'usd' ? 'دلار' : 'میلیون ریال'}
                 empty={(cost?.daily || []).length < 2 ? true : undefined}
                 option={{
                   color: [CHART_COLORS[3]],
-                  tooltip: { ...baseTooltip, valueFormatter: v => cost?.unit === 'usd' ? `$${v}` : `${v} میلیون ریال` },
+                  tooltip: { ...baseTooltip, valueFormatter: v => cost?.unit === 'usd' ? `$${formatChartNumber(v, prefs, { maximumFractionDigits: 2 })}` : `${formatChartNumber(v, prefs)} میلیون ریال` },
                   grid: baseGrid,
-                  xAxis: baseXAxis(cost?.labels || []),
+                  xAxis: baseXAxis((cost?.labels || []).map(label => fmt.dateShort(label))),
                   yAxis: baseYAxis(cost?.unit === 'usd' ? '$' : 'میلیون ریال'),
                   series: [{ type: 'line', data: cost?.unit === 'usd' ? (cost?.daily || []) : (cost?.daily || []).map(v => (v == null ? v : v / 1e6)), smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.15 } }],
                 }}

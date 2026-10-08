@@ -38,8 +38,16 @@
 .paper-card.section .card-header { height: 31px; border-radius: 10px 10px 0 0; flex-shrink: 0; }
 .paper-card.section .section-title { position: absolute; top: 2px; inset-inline-start: 9px; font-size: 13px; font-weight: 500; color: #000; height: auto; }
 .paper-card.section.cost .section-title { top: 3px; inset-inline-start: 10px; }
-.usage-charts { display: flex; gap: 20px; margin-top: 17.5px; direction: rtl; }
-.chart-col { flex: 1; min-width: 0; }
+.usage-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+  align-items: stretch;
+  direction: rtl;
+}
+.chart-col { min-width: 0; display: flex; }
+.chart-col .echart-wrap { height: 100%; }
 .chart-label { font-size: 11px; color: #616161; height: 15px; line-height: 15px; margin-bottom: 3px; }
 .chart-col canvas { width: 100%; height: 130px; display: block; }
 .cost-chart { margin-top: 7px; direction: rtl; }
@@ -118,7 +126,8 @@ select.nb-field, select.vw-field { height: 40px; }
 .fp-item.on { background: #e8f0fe; color: var(--accent); font-weight: 700; }
 
 /* stats */
-.stats-row { display: flex; gap: 12px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stats-row .stat { min-width: 0; }
 .stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; background: #fff; }
 .stat .lbl { font-size: 12px; color: var(--muted); }
 .stat .val { font-size: 21px; font-weight: 700; }
@@ -191,10 +200,22 @@ button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
 .dash-recent a { color: #0c1a33; text-decoration: none; font-weight: 600; }
 .dash-recent a:hover { color: #0d9488; }
 
+/* Chart grids scale from three columns to two, then one. */
+@media (max-width: 1199px) {
+  .usage-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* phones: dashboard stacks into one column */
 @media (max-width: 860px) {
   .dash-view { padding: 10px; }
   .dash-grid { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-rows: auto; grid-template-areas: none; }
   .dash-grid > * { grid-area: auto !important; min-height: 0; }
-  .dash-tiles { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 699px) {
+  .usage-charts,
+  .stats-row,
+  .dash-tiles { grid-template-columns: 1fr; }
 }

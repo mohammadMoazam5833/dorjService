@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { getJson } from '../../lib/http.js'
 import { PROM, LOKI, TEMPO, REFRESH_MS, COLORS, OTHERS_KEY, DEFAULT_TRACEQL, RANGES, CHARTS, RCA_CHARTS, RCA_DEPLOYS_EXPR,
   aliasMap, aliasNormalizedExpr, topUsersExpr, traceQuery, parseTrace, visibleSpans, svcColor, userSlices, scaleSeries } from '../../lib/admin/obs.js'
@@ -7,7 +7,8 @@ import { useTable } from './kit.jsx'
 import './monitoring.css'
 import Spinner from '../../components/Spinner.jsx'
 import EChart from '../../components/EChart.jsx'
-import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis } from '../../lib/echart-theme.js'
+import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, formatChartTime, formatChartNumber } from '../../lib/echart-theme.js'
+import { usePrefs } from '../../lib/prefs.jsx'
 
 // Port of the platform's admin Monitoring tab: Observability (Prometheus charts, top users,
 // per-model slow-prompt RCA, Loki logs) and Traces (Tempo search + span waterfall). Read-only.
@@ -22,11 +23,23 @@ async function prom(path, params) {
 const BUSY = Symbol('busy')
 const showStatus = s => (s === BUSY ? <Spinner /> : s)
 
-const fmtNum = v => (v >= 1000 ? `${Math.round(v / 100) / 10}k` : v >= 10 ? String(Math.round(v)) : String(Math.round(v * 100) / 100))
+function chartUnit(title) {
+  if (/%/.test(title)) return '%'
+  if (/(seconds|\(s\)|latency|ttft|itl)/i.test(title)) return 'ms'
+  return ''
+}
+
+function chartValue(value, unit, prefs) {
+  if (unit === 'ms') return `${formatChartNumber(Number(value) * 1000, prefs, { maximumFractionDigits: 1 })} ms`
+  if (unit === '%') return `${formatChartNumber(value, prefs, { maximumFractionDigits: 2 })}%`
+  return formatChartNumber(value, prefs)
+}
 
 function TimeChart({ title, series, hidden, onToggle, longRange, loading }) {
   const shown = useMemo(() => series.filter(s => !hidden.has(s.label)), [series, hidden])
-  const fmtT = t => { const d = new Date(t * 1000); return longRange ? d.toLocaleDateString([], { month: 'short', day: 'numeric' }) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+  const { prefs } = usePrefs()
+  const fmtT = useCallback(seconds => formatChartTime(seconds, prefs, longRange), [prefs, longRange])
+  const unit = chartUnit(title)
   const option = useMemo(() => {
     if (!shown.length) return null
     const t0 = Math.min(...shown.flatMap(s => s.points.map(p => p[0])))
@@ -36,16 +49,19 @@ function TimeChart({ title, series, hidden, onToggle, longRange, loading }) {
     for (let t = t0; t <= t1; t += step) labels.push(fmtT(t))
     return {
       color: CHART_COLORS,
-      tooltip: { ...baseTooltip },
-      grid: { ...baseGrid, left: 46, bottom: 26 },
+      tooltip: { ...baseTooltip, valueFormatter: value => chartValue(value, unit, prefs) },
+      grid: baseGrid,
       xAxis: baseXAxis(labels, undefined),
-      yAxis: { ...baseYAxis(''), axisLabel: { ...baseYAxis('').axisLabel, formatter: fmtNum } },
+      yAxis: {
+        ...baseYAxis(unit),
+        axisLabel: { ...baseYAxis(unit).axisLabel, formatter: value => chartValue(value, unit, prefs) },
+      },
       series: shown.map(s => ({
-        name: s.label, type: 'line', showSymbol: false, smooth: 0.2, lineStyle: { width: 1.8 },
+        name: s.label, type: 'line', showSymbol: false, smooth: 0.2, lineStyle: { width: 2 },
         data: s.points.map(([t, v]) => [Math.round((t - t0) / step), v]),
       })),
     }
-  }, [shown, longRange])
+  }, [shown, longRange, prefs, fmtT, unit])
   return (
     <div className="mo-card">
       {!series.length && !loading ? <EChart height={170} title={title} empty="داده‌ای برای این نمودار موجود نیست" /> : <EChart height={170} option={option} loading={loading} title={title} empty={!shown.length && !loading ? 'همه سری‌ها مخفی‌اند' : undefined} />}
