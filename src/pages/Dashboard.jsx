@@ -108,7 +108,7 @@ export default function Dashboard() {
                         color: [CHART_COLORS[0]],
                         tooltip: { ...baseTooltip, valueFormatter: v => `${formatChartNumber(v, prefs)} ${unit}` },
                         grid: baseGrid,
-                        xAxis: baseXAxis(labels, undefined, Math.max(1, Math.ceil((labels.length - 1) / 4))),
+                        xAxis: baseXAxis(labels, undefined, Math.max(1, Math.ceil((labels.length - 1) / 2))),
                         yAxis: baseYAxis(unit),
                         series: [{ type: 'line', data, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.12 } }],
                       }}
