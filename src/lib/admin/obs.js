@@ -5,7 +5,7 @@ export const PROM = '/admin-panel/api/admin/prometheus'
 export const LOKI = '/admin-panel/api/admin/loki'
 export const TEMPO = '/admin-panel/api/admin/tempo'
 export const REFRESH_MS = 60000
-export const COLORS = ['#1e88e5', '#00acc1', '#e91e63', '#ff9800', '#9ccc65', '#8e24aa', '#3949ab', '#00897b', '#c0ca33', '#f4511e']
+export const COLORS = ['#2747B8', '#5B8CFF', '#E8A317', '#2BB6A8', '#8B7CF6', '#E76A5E', '#4CC3E0', '#5F6F92', '#B78BE8', '#F19A7F']
 export const OTHERS_KEY = '__others__'
 export const OTHERS_COLOR = '#9e9e9e'
 export const DEFAULT_TRACEQL = '{ span.http.target =~ "/v1/.*" }'
