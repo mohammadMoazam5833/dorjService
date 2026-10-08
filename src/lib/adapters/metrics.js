@@ -7,11 +7,23 @@ export function seriesValues(points) {
     .map(Number)
 }
 
+export function seriesTimestamps(raw) {
+  for (const key of ['cpu_cores', 'memory_gib', 'storage_gib', 'gpu_util_pct']) {
+    const points = Array.isArray(raw?.[key]) ? raw[key] : []
+    const timestamps = points
+      .map(p => (Array.isArray(p) ? Number(p[0]) : Number.NaN))
+      .filter(Number.isFinite)
+    if (timestamps.length) return timestamps
+  }
+  return []
+}
+
 export const adaptUsageHistory = raw => ({
   cpu_cores: seriesValues(raw?.cpu_cores),
   memory_gib: seriesValues(raw?.memory_gib),
   storage_gib: seriesValues(raw?.storage_gib),
   gpu_util_pct: seriesValues(raw?.gpu_util_pct),
+  timestamps: seriesTimestamps(raw),
 })
 
 // /api/dashboard-cost: {daily:[{date,usd,irr}], by_pod:[{pod,usd,irr}]}. irr is null when no FX rate.

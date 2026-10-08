@@ -47,10 +47,15 @@ export default function Usage() {
   const memData  = slice(hist?.memory_gib)
   const diskData = slice(hist?.storage_gib)
   const pointCount = Math.max(cpuData.length, memData.length, diskData.length, 1)
-  const xLabels = useMemo(() => Array.from({ length: pointCount }, (_, i) => {
-    const seconds = Math.round((usageEnd - (pointCount - 1 - i) * 5 * 60) / 1000)
-    return formatChartTime(seconds, prefs)
-  }), [pointCount, usageEnd, prefs])
+  const xLabels = useMemo(() => {
+    const actual = (hist?.timestamps || []).map(Number).filter(Number.isFinite)
+    if (actual.length) return actual.map(t => formatChartTime(t, prefs))
+    // Keep generated labels only for legacy payloads without Prometheus timestamps.
+    return Array.from({ length: pointCount }, (_, i) => {
+      const seconds = Math.round((usageEnd - (pointCount - 1 - i) * 5 * 60) / 1000)
+      return formatChartTime(seconds, prefs)
+    })
+  }, [hist, pointCount, usageEnd, prefs])
 
   const cpuPct  = u?.cpu?.pct ?? null
   const memPct  = u?.memory?.pct ?? null

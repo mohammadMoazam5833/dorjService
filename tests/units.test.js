@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { visibleTabs, parseQuantity, remaining, quotaErrors, gpuChoices } from '../src/lib/admin/units.js'
+import { rialShort } from '../src/lib/format.js'
 
 const ALL = ['profiles', 'users', 'notebook-options', 'access', 'groups', 'broadcast', 'requests']
 test('super admin sees every tab plus units', () => {
@@ -44,4 +45,11 @@ test('specFromForm builds the unit spec and parses GPU lines', () => {
 
 test('specFromForm rejects a GPU line it cannot parse', () => {
   assert.throws(() => specFromForm({ fa: '', en: '', admins: '', gpus: 'gpu: 4' }), /GPU/)
+})
+
+test('rialShort makes monthly cost compact and Persian', () => {
+  assert.equal(rialShort(2_480_000_000, 'persian'), '۲٫۴۸ میلیارد ریال')
+  assert.equal(rialShort(1_234_000, 'latin'), '1.23 میلیون ریال')
+  assert.equal(rialShort(950, 'persian'), '۹۵۰ ریال')
+  assert.equal(rialShort(null, 'persian'), '۰ ریال')
 })

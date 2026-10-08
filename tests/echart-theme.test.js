@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { CHART_COLORS, formatChartNumber, formatChartTime, toChartDigits, withChartTheme } from '../src/lib/echart-theme.js'
+import { CHART_COLORS, baseXAxis, formatChartNumber, formatChartTime, toChartDigits, withChartTheme } from '../src/lib/echart-theme.js'
 
 test('chart palette follows the Dorj series order', () => {
   assert.deepEqual(CHART_COLORS, ['#2747B8', '#5B8CFF', '#E8A317', '#2BB6A8', '#8B7CF6', '#E76A5E'])
@@ -33,4 +33,10 @@ test('theme normalizes axes, tooltip, animation and line gradients', () => {
   assert.equal(typeof option.xAxis.axisLabel.formatter, 'function')
   assert.equal(typeof option.legend.formatter, 'function')
   assert.match(option.series[0].areaStyle.color.colorStops[0].color, /^#2747B8/)
+})
+
+test('time axes default to roughly five readable labels', () => {
+  const axis = baseXAxis(Array.from({ length: 73 }, (_, i) => `${i}`))
+  assert.equal(axis.axisLabel.interval, 18)
+  assert.equal(baseXAxis(['a', 'b'], undefined, 0).axisLabel.interval, 0)
 })

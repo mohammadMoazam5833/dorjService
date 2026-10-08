@@ -58,6 +58,7 @@ export function formatChartTime(seconds, prefs = {}, longRange = false) {
   }
   const hh = String(date.getHours()).padStart(2, '0')
   const mm = String(date.getMinutes()).padStart(2, '0')
+  // Always pass clock labels through toChartDigits so Persian preferences do not depend on locale.
   return toChartDigits(`${hh}:${mm}`, prefs)
 }
 
@@ -275,7 +276,7 @@ export const baseYAxis = (unit = '') => ({
   axisTick: { show: false },
 })
 
-export const baseXAxis = (labels, formatter) => ({
+export const baseXAxis = (labels, formatter, interval) => ({
   type: 'category',
   data: labels,
   boundaryGap: false,
@@ -284,6 +285,8 @@ export const baseXAxis = (labels, formatter) => ({
     fontSize: 10.5,
     margin: 10,
     formatter,
+    // Small cards stay readable; use at most about five time labels.
+    interval: interval ?? Math.max(1, Math.ceil((labels.length - 1) / 4)),
     hideOverlap: true,
     showMaxLabel: true,
   },

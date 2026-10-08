@@ -48,6 +48,24 @@ export const num = (n, decimals = 0) =>
 export const rial = n => `${Number(n || 0).toLocaleString('en-US')} ریال`
 export const usd  = n => `$${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
 
+// Compact KPI text: 2.48B Rial is too wide for a dashboard tile.
+export function rialShort(n, digits = 'latin') {
+  const value = Number(n || 0)
+  if (!Number.isFinite(value)) return '—'
+  const units = [
+    ['میلیارد', 1e9],
+    ['میلیون', 1e6],
+    ['هزار', 1e3],
+  ].find(([, size]) => Math.abs(value) >= size)
+  if (!units) {
+    const text = new Intl.NumberFormat(digits === 'persian' ? 'fa-IR' : 'en-US', { maximumFractionDigits: 0 }).format(value)
+    return `${text} ریال`
+  }
+  const [label, size] = units
+  const text = new Intl.NumberFormat(digits === 'persian' ? 'fa-IR' : 'en-US', { maximumFractionDigits: 2 }).format(value / size)
+  return `${text} ${label} ریال`
+}
+
 // Legacy alias (was toman — now Rial to unify)
 export const irr = rial
 

@@ -6,7 +6,7 @@ import EChart from '../components/EChart.jsx'
 import { CHART_COLORS, baseTooltip, baseGrid, baseYAxis, baseXAxis, formatChartNumber, formatChartTime } from '../lib/echart-theme.js'
 import { usePrefs } from '../lib/prefs.jsx'
 import { useApi } from '../lib/api.js'
-import { faNum, rial, fmt } from '../lib/format.js'
+import { faNum, rialShort, fmt } from '../lib/format.js'
 import { adaptUsageHistory, adaptCost } from '../lib/adapters/metrics.js'
 import { adaptNotebooks } from '../lib/adapters/workloads.js'
 import ErrorNote from '../components/ErrorNote.jsx'
@@ -31,9 +31,11 @@ export default function Dashboard() {
   const recent = (nbs || []).slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 5)
   const c = sum?.cluster || {}
   const { prefs } = usePrefs()
-  // The API has no requested end timestamp; pin the generated six-hour labels to this render's load.
   const [usageEnd] = useState(() => Date.now())
   const usageTimes = useMemo(() => {
+    const actual = (usage?.timestamps || []).map(Number).filter(Number.isFinite)
+    if (actual.length) return actual
+    // Legacy payloads without Prometheus timestamps still need a stable axis.
     const count = Math.max((usage?.cpu_cores || []).length, (usage?.memory_gib || []).length, (usage?.storage_gib || []).length)
     return Array.from({ length: count }, (_, i) => Math.round((usageEnd - (count - 1 - i) * 5 * 60) / 1000))
   }, [usage, usageEnd])
@@ -81,7 +83,7 @@ export default function Dashboard() {
             <Tile icon="view-module" color="teal" label="مصرف حافظه شما" value={sum ? pct(c.memory_pct) : '—'} suffix="%" />
             <Tile icon="assessment" color="amber" label="مصرف CPU شما" value={sum ? pct(c.cpu_pct) : '—'} suffix="%" />
             <Tile icon="supervisor" color="blue" label="تعداد پروفایل‌ها" value={sum ? faNum(sum.profile_count) : '—'} />
-            <Tile icon="wallet" color="blue" label="هزینه ماهانه" value={sum?.monthly_cost?.amount_irr != null ? rial(sum.monthly_cost.amount_irr) : '—'} />
+            <Tile icon="wallet" color="blue" label="هزینه ماهانه" value={sum?.monthly_cost?.amount_irr != null ? rialShort(sum.monthly_cost.amount_irr, prefs.lang === 'en' ? 'latin' : 'persian') : '—'} />
             <Tile icon="save" color="purple" label="مصرف فضای ذخیره‌سازی شما" value={sum ? pct(c.storage_pct) : '—'} suffix="%" />
           </div>
           <div className="paper-card section" style={{ gridArea: 'usage' }}>
@@ -106,7 +108,7 @@ export default function Dashboard() {
                         color: [CHART_COLORS[0]],
                         tooltip: { ...baseTooltip, valueFormatter: v => `${formatChartNumber(v, prefs)} ${unit}` },
                         grid: baseGrid,
-                        xAxis: baseXAxis(labels, lbl => lbl.replace('.0', '')),
+                        xAxis: baseXAxis(labels, undefined, Math.max(1, Math.ceil((labels.length - 1) / 4))),
                         yAxis: baseYAxis(unit),
                         series: [{ type: 'line', data, smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.12 } }],
                       }}
@@ -131,9 +133,12 @@ export default function Dashboard() {
                 option={{
                   color: [CHART_COLORS[3]],
                   tooltip: { ...baseTooltip, valueFormatter: v => cost?.unit === 'usd' ? `$${formatChartNumber(v, prefs, { maximumFractionDigits: 2 })}` : `${formatChartNumber(v, prefs)} میلیون ریال` },
-                  grid: baseGrid,
+                  grid: { ...baseGrid, left: 72, top: 46 },
                   xAxis: baseXAxis((cost?.labels || []).map(label => fmt.dateShort(label))),
-                  yAxis: baseYAxis(cost?.unit === 'usd' ? '$' : 'میلیون ریال'),
+                  yAxis: {
+                    ...baseYAxis(cost?.unit === 'usd' ? '$' : 'میلیون ریال'),
+                    nameGap: 24,
+                  },
                   series: [{ type: 'line', data: cost?.unit === 'usd' ? (cost?.daily || []) : (cost?.daily || []).map(v => (v == null ? v : v / 1e6)), smooth: 0.3, symbol: 'none', lineStyle: { width: 2 }, areaStyle: { opacity: 0.15 } }],
                 }}
               />

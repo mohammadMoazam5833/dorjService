@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seriesValues, adaptUsageHistory, adaptCost } from '../src/lib/adapters/metrics.js'
+import { seriesValues, seriesTimestamps, adaptUsageHistory, adaptCost } from '../src/lib/adapters/metrics.js'
 
 test('seriesValues keeps nulls out', () => {
   assert.deepEqual(seriesValues([[1, 0.5], [2, null], [3, 2]]), [0.5, 2])
@@ -10,7 +10,15 @@ test('seriesValues keeps nulls out', () => {
 
 test('usage history maps every series', () => {
   const h = adaptUsageHistory({ cpu_cores: [[1, 1]], memory_gib: [[1, 2]], storage_gib: [[1, 3]], gpu_util_pct: [] })
-  assert.deepEqual(h, { cpu_cores: [1], memory_gib: [2], storage_gib: [3], gpu_util_pct: [] })
+  assert.deepEqual(h, { cpu_cores: [1], memory_gib: [2], storage_gib: [3], gpu_util_pct: [], timestamps: [1] })
+})
+
+test('usage history keeps Prometheus point timestamps', () => {
+  const raw = { cpu_cores: [[11, 1], [22, 2]], memory_gib: [[11, 3]] }
+  assert.deepEqual(seriesTimestamps(raw), [11, 22])
+  assert.deepEqual(adaptUsageHistory(raw).timestamps, [11, 22])
+  assert.deepEqual(seriesTimestamps({ cpu_cores: [1, 2] }), [])
+  assert.deepEqual(seriesTimestamps(null), [])
 })
 
 test('cost prefers irr, falls back to usd, sorts pods by cost', () => {
